@@ -1,4 +1,4 @@
-(function () {
+﻿(function () {
   "use strict";
 
   const STORAGE_KEYS = {
@@ -662,26 +662,25 @@
 
   function updatePerformanceSummary() {
     const latest = state.history[0];
-    const metricKey = latest?.dynDay ? "dynDay" : "staDay";
-    const comparable = state.history.filter((entry) => entry[metricKey] > 0).slice(1, 5);
-    if (!latest || !latest[metricKey] || !comparable.length) {
+    const comparable = state.history.filter((entry) => entry.totalApneaSeconds > 0).slice(1, 5);
+    if (!latest || !latest.totalApneaSeconds || !comparable.length) {
       els.performanceSummary.textContent = "Aún sin base suficiente";
-      els.performanceCopy.textContent = "Necesitamos al menos una sesión comparable previa para calcular el promedio.";
+      els.performanceCopy.textContent = "Necesitamos al menos una sesión previa con apnea total registrada para calcular el promedio.";
       els.recoveryAlert.textContent = "Todo estable";
       els.recoveryAlertCopy.textContent = "Todavía no hay suficiente historial comparable.";
       return;
     }
 
-    const avg = comparable.reduce((sum, entry) => sum + entry[metricKey], 0) / comparable.length;
-    const delta = ((latest[metricKey] - avg) / avg) * 100;
-    els.performanceSummary.textContent = `${metricKey === "dynDay" ? "DYN" : "STA"} actual ${latest[metricKey].toFixed(1)} vs promedio ${avg.toFixed(1)}`;
+    const avg = comparable.reduce((sum, entry) => sum + entry.totalApneaSeconds, 0) / comparable.length;
+    const delta = ((latest.totalApneaSeconds - avg) / avg) * 100;
+    els.performanceSummary.textContent = `Apnea total actual ${formatDuration(latest.totalApneaSeconds)} vs promedio ${formatDuration(avg)}`;
     els.performanceCopy.textContent = `Variación ${delta.toFixed(1)}% respecto a las últimas ${comparable.length} sesiones comparables.`;
     if (delta < -10) {
       els.recoveryAlert.textContent = "Descanso activo sugerido";
-      els.recoveryAlertCopy.textContent = "El rendimiento cayó más del 10% respecto al promedio reciente.";
+      els.recoveryAlertCopy.textContent = "La carga total de apnea cayó más del 10% respecto al promedio reciente.";
     } else {
       els.recoveryAlert.textContent = "Todo estable";
-      els.recoveryAlertCopy.textContent = "La sesión está dentro del margen saludable respecto a tu promedio reciente.";
+      els.recoveryAlertCopy.textContent = "La sesión está dentro del margen saludable respecto a tu volumen reciente.";
     }
   }
 
@@ -789,30 +788,30 @@
     canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    ctx.fillStyle = "rgba(255,255,255,0.035)";
     ctx.fillRect(0, 0, width, height);
 
     if (!rows || !rows.length) {
-      els.previewTitle.textContent = "Selecciona una tabla para estimar O₂ y CO₂";
-      els.previewSubtitle.textContent = "Curvas lineales orientativas según la duración de apnea.";
+      els.previewTitle.textContent = "Selecciona una tabla para estimar la carga";
+      els.previewSubtitle.textContent = "Curva general de acumulación de CO₂ durante toda la sesión.";
       ctx.fillStyle = "#9dbdca";
       ctx.font = "16px Segoe UI";
       ctx.fillText("Sin datos para previsualizar.", 24, 40);
       return;
     }
 
-    const padding = { top: 20, right: 20, bottom: 34, left: 34 };
+    const padding = { top: 16, right: 18, bottom: 28, left: 20 };
     const plotWidth = width - padding.left - padding.right;
     const plotHeight = height - padding.top - padding.bottom;
     const simulation = buildGasSimulation(rows);
     const co2 = simulation.co2;
-    const apneaCount = rows.length;
-    const totalSeconds = simulation.totalSeconds;
+    const maxValue = Math.max(...co2, 1);
 
-    els.previewTitle.textContent = `Patrón completo de ${apneaCount} repeticiones`;
-    els.previewSubtitle.textContent = "Tendencia general de acumulación de CO₂ con recuperación parcial entre ciclos.";
+    els.previewTitle.textContent = `Patrón completo de ${rows.length} repeticiones`;
+    els.previewSubtitle.textContent = `Carga acumulada durante ${formatDuration(simulation.totalSeconds)} de sesión.`;
 
-    ctx.strokeStyle = "rgba(157,189,202,0.2)";
+    ctx.strokeStyle = "rgba(157,189,202,0.14)";
+    ctx.lineWidth = 1;
     for (let i = 0; i <= 4; i += 1) {
       const y = padding.top + (plotHeight / 4) * i;
       ctx.beginPath();
@@ -821,15 +820,23 @@
       ctx.stroke();
     }
 
-    drawPreviewLine(ctx, co2, plotWidth, plotHeight, padding, "#3d5afe");
+    ctx.strokeStyle = "#456bff";
+    ctx.lineWidth = 1.35;
+    ctx.beginPath();
+    co2.forEach((value, index) => {
+      const x = padding.left + (plotWidth / Math.max(co2.length - 1, 1)) * index;
+      const y = padding.top + plotHeight - (value / maxValue) * plotHeight;
+      if (index === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
 
-    ctx.fillStyle = "#3d5afe";
-    ctx.fillRect(width - 132, 18, 12, 12);
     ctx.fillStyle = "#effafd";
-    ctx.fillText("CO₂ acumulado", width - 112, 28);
+    ctx.font = "12px Segoe UI";
+    ctx.fillText("CO₂", padding.left, 12);
     ctx.fillStyle = "#9dbdca";
-    ctx.fillText("Inicio", padding.left, height - 10);
-    ctx.fillText(formatDuration(totalSeconds), width - padding.right - 38, height - 10);
+    ctx.fillText("Inicio", padding.left, height - 8);
+    ctx.fillText(formatDuration(simulation.totalSeconds), width - padding.right - 34, height - 8);
   }
 
   function drawPreviewLine(ctx, values, plotWidth, plotHeight, padding, color) {
@@ -847,16 +854,15 @@
 
   function buildGasSimulation(rows) {
     const co2 = [];
-    let currentCo2 = 8;
-    let baseCo2 = 8;
+    let currentCo2 = 6;
+    let floorCo2 = 6;
     let totalSeconds = 0;
 
     rows.forEach((row, index) => {
       const apneaDuration = Math.max(1, Math.round(row.apneaSeconds));
       const recoveryDuration = Math.max(0, Math.round(row.recoverySeconds));
-      const peakIncrease = 10 + row.percent * 14 + index * 1.6;
-      const peakCo2 = Math.min(92, baseCo2 + peakIncrease);
-      const recoveryFloor = Math.min(72, baseCo2 + 3.5 + index * 1.2);
+      const peakCo2 = Math.min(100, floorCo2 + 18 + row.percent * 14 + index * 2.6);
+      const recoveryFloor = Math.max(floorCo2 + 2.4, peakCo2 - (7 + recoveryDuration * 0.018));
 
       pushLinearSegment(co2, currentCo2, peakCo2, apneaDuration);
       currentCo2 = peakCo2;
@@ -868,8 +874,8 @@
         totalSeconds += recoveryDuration;
       }
 
-      baseCo2 = Math.min(62, baseCo2 + 2.2 + row.percent * 1.5);
-      currentCo2 = Math.max(currentCo2, baseCo2);
+      floorCo2 = Math.min(80, floorCo2 + 2 + row.percent * 1.2 + index * 0.3);
+      currentCo2 = Math.max(currentCo2, floorCo2);
     });
 
     return { co2, totalSeconds };
@@ -1182,7 +1188,7 @@
     state.customTable = rows;
     state.customSessionMeta = {
       type: `custom-${type}`,
-      label: type === "co2" ? "Tabla personalizada CO₂" : "Tabla personalizada O₂",
+      label: type === "co2" ? "Tabla personalizada CO₂‚" : "Tabla personalizada O₂‚",
       reps,
       metric: "STA",
     };
@@ -1329,3 +1335,4 @@
 
   init();
 })();
+

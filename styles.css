@@ -10,7 +10,7 @@
   --text: #effafd;
   --muted: #9dbdca;
   --teal: #39d8c3;
-  --blue: #2d84ff;
+  --blue: #006aff;
   --warning: #ffd479;
   --danger: #ff8d7e;
   --shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
@@ -30,7 +30,7 @@ body {
   min-height: 100%;
   background:
     radial-gradient(circle at top, rgba(57, 216, 195, 0.1), transparent 28%),
-    linear-gradient(180deg, #041525 0%, #020b13 100%);
+    linear-gradient(180deg, #022546 0%, #020b13 100%);
   color: var(--text);
   font-family: var(--font);
 }
@@ -38,7 +38,7 @@ body {
 body.training-active {
   overflow: hidden;
 }
-
+  
 button,
 input,
 select,
