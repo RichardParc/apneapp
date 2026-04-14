@@ -413,7 +413,7 @@
     if (percent <= 0.5) return "Cómodo";
     if (percent <= 0.65) return "Moderado";
     if (percent <= 0.8) return "Intenso";
-    return "Lucha real";
+    return "Lucha";
   }
 
   function estimateDynamicApneaSeconds(distanceMeters) {
@@ -772,72 +772,156 @@
   }
 
   function drawGasPreview(rows = state.currentTable) {
-    const canvas = els.gasPreviewChart;
-    if (!canvas || !els.previewTitle || !els.previewSubtitle) return;
+  const canvas = els.gasPreviewChart;
+  if (!canvas || !els.previewTitle || !els.previewSubtitle) return;
+  const ctx = canvas.getContext("2d");
+  const rect = canvas.getBoundingClientRect();
+  const width = rect.width || (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 600;
+  const height = rect.height || 220;
+  if (width < 40) return;
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, width, height);
+  ctx.fillStyle = "rgba(255,255,255,0.035)";
+  ctx.fillRect(0, 0, width, height);
 
-    const ctx = canvas.getContext("2d");
-    const rect = canvas.getBoundingClientRect();
-    const width = rect.width || (canvas.parentElement ? canvas.parentElement.clientWidth : 0) || 600;
-    const height = rect.height || 220;
-    if (width < 40) return;
-
-    const dpr = window.devicePixelRatio || 1;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "rgba(255,255,255,0.035)";
-    ctx.fillRect(0, 0, width, height);
-
-    if (!rows || !rows.length) {
-      els.previewTitle.textContent = "Selecciona una tabla para estimar la carga";
-      els.previewSubtitle.textContent = "Curva general de acumulación de CO₂ durante toda la sesión.";
-      ctx.fillStyle = "#9dbdca";
-      ctx.font = "16px Segoe UI";
-      ctx.fillText("Sin datos para previsualizar.", 24, 40);
-      return;
-    }
-
-    const padding = { top: 16, right: 18, bottom: 28, left: 20 };
-    const plotWidth = width - padding.left - padding.right;
-    const plotHeight = height - padding.top - padding.bottom;
-    const simulation = buildGasSimulation(rows);
-    const co2 = simulation.co2;
-    const maxValue = Math.max(...co2, 1);
-
-    els.previewTitle.textContent = `Patrón completo de ${rows.length} repeticiones`;
-    els.previewSubtitle.textContent = `Carga acumulada durante ${formatDuration(simulation.totalSeconds)} de sesión.`;
-
-    ctx.strokeStyle = "rgba(157,189,202,0.14)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i += 1) {
-      const y = padding.top + (plotHeight / 4) * i;
-      ctx.beginPath();
-      ctx.moveTo(padding.left, y);
-      ctx.lineTo(width - padding.right, y);
-      ctx.stroke();
-    }
-
-    ctx.strokeStyle = "#456bff";
-    ctx.lineWidth = 1.35;
-    ctx.beginPath();
-    co2.forEach((value, index) => {
-      const x = padding.left + (plotWidth / Math.max(co2.length - 1, 1)) * index;
-      const y = padding.top + plotHeight - (value / maxValue) * plotHeight;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
-    });
-    ctx.stroke();
-
-    ctx.fillStyle = "#effafd";
-    ctx.font = "12px Segoe UI";
-    ctx.fillText("CO₂", padding.left, 12);
+  if (!rows || !rows.length) {
+    els.previewTitle.textContent = "Selecciona una tabla para estimar la carga";
+    els.previewSubtitle.textContent = "Curva general de acumulación de CO₂ durante toda la sesión.";
     ctx.fillStyle = "#9dbdca";
-    ctx.fillText("Inicio", padding.left, height - 8);
-    ctx.fillText(formatDuration(simulation.totalSeconds), width - padding.right - 34, height - 8);
+    ctx.font = "16px Segoe UI";
+    ctx.fillText("Sin datos para previsualizar.", 24, 40);
+    return;
   }
+
+  const padding = { top: 22, right: 18, bottom: 30, left: 42 };
+  const plotWidth = width - padding.left - padding.right;
+  const plotHeight = height - padding.top - padding.bottom;
+
+  const simulation = buildGasSimulation(rows);
+  const co2 = simulation.co2;
+  const maxValue = Math.max(...co2, 1);
+  const n = Math.max(co2.length - 1, 1);
+
+  els.previewTitle.textContent = `Patrón completo de ${rows.length} repeticiones`;
+  els.previewSubtitle.textContent = `Carga acumulada durante ${formatDuration(simulation.totalSeconds)} de sesión.`;
+
+  const xOf = (i) => padding.left + (plotWidth / n) * i;
+  const yOf = (v) => padding.top + plotHeight - (v / maxValue) * plotHeight;
+
+  // Grid lines horizontales
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = padding.top + (plotHeight / 4) * i;
+    ctx.strokeStyle = "rgba(157,189,202,0.14)";
+    ctx.beginPath();
+    ctx.moveTo(padding.left, y);
+    ctx.lineTo(width - padding.right, y);
+    ctx.stroke();
+  }
+
+  // Etiquetas eje Y
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "right";
+  [0, 0.5, 1].forEach((f) => {
+    const y = padding.top + plotHeight * (1 - f);
+    ctx.fillStyle = "rgba(157,189,202,0.7)";
+    ctx.fillText((f * maxValue).toFixed(1), padding.left - 5, y + 4);
+  });
+
+  // Marcas verticales por repetición
+  if (simulation.repStarts && simulation.repStarts.length) {
+    simulation.repStarts.forEach((ri) => {
+      const x = xOf(ri);
+      ctx.strokeStyle = "rgba(69,107,255,0.18)";
+      ctx.lineWidth = 0.8;
+      ctx.beginPath();
+      ctx.moveTo(x, padding.top);
+      ctx.lineTo(x, padding.top + plotHeight);
+      ctx.stroke();
+    });
+  }
+
+  // Zona de alerta (80% del máximo)
+  const alertY = yOf(maxValue * 0.80);
+  ctx.fillStyle = "rgba(220,70,50,0.07)";
+  ctx.fillRect(padding.left, padding.top, plotWidth, alertY - padding.top);
+  ctx.strokeStyle = "rgba(200,60,40,0.4)";
+  ctx.lineWidth = 0.8;
+  ctx.setLineDash([4, 3]);
+  ctx.beginPath();
+  ctx.moveTo(padding.left, alertY);
+  ctx.lineTo(width - padding.right, alertY);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = "rgba(200,60,40,0.6)";
+  ctx.font = "10px Segoe UI";
+  ctx.textAlign = "left";
+  ctx.fillText("zona alta", padding.left + 4, alertY - 4);
+
+  // Área rellena bajo la curva
+  const grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + plotHeight);
+  grad.addColorStop(0, "rgba(69,107,255,0.22)");
+  grad.addColorStop(1, "rgba(69,107,255,0)");
+  ctx.beginPath();
+  co2.forEach((value, i) => {
+    const x = xOf(i);
+    const y = yOf(value);
+    if (i === 0) { ctx.moveTo(x, y); return; }
+    const px = xOf(i - 1);
+    const py = yOf(co2[i - 1]);
+    ctx.bezierCurveTo(px + (x - px) * 0.5, py, x - (x - px) * 0.5, y, x, y);
+  });
+  ctx.lineTo(xOf(co2.length - 1), padding.top + plotHeight);
+  ctx.lineTo(padding.left, padding.top + plotHeight);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Línea principal suavizada
+  ctx.beginPath();
+  co2.forEach((value, i) => {
+    const x = xOf(i);
+    const y = yOf(value);
+    if (i === 0) { ctx.moveTo(x, y); return; }
+    const px = xOf(i - 1);
+    const py = yOf(co2[i - 1]);
+    ctx.bezierCurveTo(px + (x - px) * 0.5, py, x - (x - px) * 0.5, y, x, y);
+  });
+  ctx.strokeStyle = "#456bff";
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+
+  // Ticks de tiempo en eje X
+  const tickEvery = simulation.totalSeconds <= 120 ? 30 : simulation.totalSeconds <= 300 ? 60 : 120;
+  ctx.font = "10px Segoe UI";
+  ctx.textAlign = "center";
+  for (let s = 0; s <= simulation.totalSeconds; s += tickEvery) {
+    const x = padding.left + plotWidth * (s / simulation.totalSeconds);
+    ctx.strokeStyle = "rgba(157,189,202,0.14)";
+    ctx.lineWidth = 0.5;
+    ctx.beginPath();
+    ctx.moveTo(x, padding.top + plotHeight);
+    ctx.lineTo(x, padding.top + plotHeight + 4);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(157,189,202,0.7)";
+    ctx.fillText(formatDuration(s), x, height - 4);
+  }
+
+  // Label eje Y rotado
+  ctx.save();
+  ctx.translate(12, padding.top + plotHeight / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillStyle = "#9dbdca";
+  ctx.font = "11px Segoe UI";
+  ctx.textAlign = "center";
+  ctx.fillText("CO₂", 0, 0);
+  ctx.restore();
+}
 
   function drawPreviewLine(ctx, values, plotWidth, plotHeight, padding, color) {
     ctx.strokeStyle = color;
