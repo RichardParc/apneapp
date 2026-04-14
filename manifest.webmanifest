@@ -1,0 +1,23 @@
+{
+  "name": "Blue Hold",
+  "short_name": "Blue Hold",
+  "description": "PWA de entrenamiento de apnea calibrada con tus marcas personales.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#03111c",
+  "theme_color": "#041525",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-maskable.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

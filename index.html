@@ -1,0 +1,381 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#041525" />
+    <meta name="description" content="PWA de entrenamiento de apnea calibrada con tus marcas personales." />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="icons/icon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Blue Hold</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Blue Hold</p>
+          <h1>Entrenamiento de apnea calibrado desde tu DYN y STA.</h1>
+        </div>
+        <p class="hero-copy">
+          Perfil, tablas, relajación, sesión inmersiva, test Pelizzari e historial offline en una sola app.
+        </p>
+      </header>
+
+      <main class="workspace">
+        <section class="tab-panel active" data-tab-panel="perfil">
+          <section class="panel profile-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 1</p>
+                <h2>Perfil del atleta</h2>
+              </div>
+              <span id="storage-status" class="badge">Guardado local</span>
+            </div>
+
+            <form id="profile-form" class="profile-form">
+              <label>
+                <span>DYN máximo (m)</span>
+                <input id="dyn-max" name="dynMax" type="number" min="1" inputmode="decimal" required />
+              </label>
+              <label>
+                <span>STA máximo (seg)</span>
+                <input id="sta-max" name="staMax" type="number" min="1" inputmode="numeric" required />
+              </label>
+              <label>
+                <span>Largo de piscina (m)</span>
+                <input id="pool-length" name="poolLength" type="number" min="1" inputmode="decimal" required />
+              </label>
+              <button class="button primary" type="submit">Guardar perfil</button>
+            </form>
+
+            <div class="metrics-grid">
+              <article class="metric">
+                <p class="metric-label">Diagnóstico Pelizzari</p>
+                <strong id="diagnostic-title">Completa tu perfil</strong>
+                <p id="diagnostic-copy">Necesitamos tus marcas para detectar si el cuello de botella actual está en dinámica, estática o si estás equilibrado.</p>
+              </article>
+              <article class="metric">
+                <p class="metric-label">Objetivos automáticos</p>
+                <div id="goal-list" class="goal-list"></div>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="tablas">
+          <section class="panel tables-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 2</p>
+                <h2>Generador de tablas</h2>
+              </div>
+              <div class="inline-settings">
+                <label>
+                  <span>Tabla</span>
+                  <select id="table-type">
+                    <option value="tableA">Tabla A</option>
+                    <option value="tableB">Tabla B</option>
+                    <option value="topTime">Top/Time</option>
+                    <option value="co2Short">CO₂ corto</option>
+                    <option value="dynB1">Dinámica B1</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Reps configurables</span>
+                  <input id="rep-count" type="number" min="6" max="10" value="8" />
+                </label>
+              </div>
+            </div>
+
+            <div class="table-summary strip-grid">
+              <div>
+                <p class="summary-label">Recuperación recomendada</p>
+                <strong id="recovery-guidance">Completa el perfil para calcularla.</strong>
+              </div>
+              <div>
+                <p class="summary-label">Tipo de trabajo</p>
+                <strong id="session-focus">Sin seleccionar</strong>
+              </div>
+              <div>
+                <p class="summary-label">Duración total</p>
+                <strong id="session-total-time">00:00</strong>
+              </div>
+            </div>
+
+            <div class="tables-tools">
+              <article class="metric alert-config-card">
+                <div class="alert-header">
+                  <div>
+                    <p class="metric-label">Alertas</p>
+                    <strong class="inline-strong">Avisos útiles durante la sesión</strong>
+                  </div>
+                  <button id="toggle-alerts" class="button ghost small-button" type="button">Ocultar</button>
+                </div>
+                <div id="alerts-body" class="alert-body">
+                  <div class="alert-group">
+                    <p class="metric-label">Antes de apnea</p>
+                    <label class="alert-toggle"><input id="beep-pre-thirty-enabled" type="checkbox" checked /> Audio a 30 segundos</label>
+                    <label class="alert-toggle"><input id="beep-pre-ten-enabled" type="checkbox" checked /> Audio a 10 segundos</label>
+                    <label class="alert-toggle"><input id="beep-pre-five-enabled" type="checkbox" checked /> Audio a 5 segundos</label>
+                  </div>
+
+                  <div class="alert-group">
+                    <p class="metric-label">Durante apnea</p>
+                    <div class="alert-option alert-option-with-input">
+                      <label class="alert-toggle"><input id="beep-apnea-interval-enabled" type="checkbox" checked /> Pitido cada</label>
+                      <input id="beep-apnea-interval" type="number" min="5" step="5" value="30" />
+                      <span>segundos</span>
+                    </div>
+                    <label class="alert-toggle"><input id="mantra-enabled" type="checkbox" checked /> Mantra a mitad de apnea</label>
+                  </div>
+
+                  <div class="alert-group">
+                    <p class="metric-label">Final de apnea</p>
+                    <label class="alert-toggle"><input id="beep-apnea-final-enabled" type="checkbox" checked /> Audio a 10 segundos del final</label>
+                    <label class="alert-toggle"><input id="beep-apnea-five-enabled" type="checkbox" checked /> Audio a 5 segundos del final</label>
+                  </div>
+                </div>
+              </article>
+
+              <article class="metric preview-card">
+                <div class="preview-head">
+                  <div>
+                    <p class="metric-label">Vista previa de CO₂</p>
+                    <strong id="preview-title">Selecciona una tabla para estimar la carga</strong>
+                  </div>
+                  <span id="preview-subtitle" class="history-meta">Curva general de acumulación de CO₂ durante toda la sesión.</span>
+                </div>
+                <canvas id="gas-preview-chart" height="220"></canvas>
+              </article>
+            </div>
+
+            <div id="generated-table" class="generated-table"></div>
+
+            <div class="button-row">
+              <button id="start-session" class="button primary" type="button">Iniciar sesión</button>
+              <button id="save-session-template" class="button secondary" type="button">Guardar como base</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="personal">
+          <section class="panel custom-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 3</p>
+                <h2>Tablas personalizadas</h2>
+              </div>
+              <span class="badge">CO₂ / O₂</span>
+            </div>
+
+            <form id="custom-form" class="custom-form">
+              <label>
+                <span>Tipo</span>
+                <select id="custom-type">
+                  <option value="co2">CO₂</option>
+                  <option value="o2">O₂</option>
+                </select>
+              </label>
+              <label>
+                <span>Repeticiones</span>
+                <input id="custom-reps" type="number" min="4" max="16" value="8" />
+              </label>
+              <label>
+                <span>Apnea inicial (seg)</span>
+                <input id="custom-apnea-start" type="number" min="10" value="60" />
+              </label>
+              <label>
+                <span>Recuperación inicial (seg)</span>
+                <input id="custom-rest-start" type="number" min="10" value="120" />
+              </label>
+              <label>
+                <span>Intervalo por rep (seg)</span>
+                <input id="custom-step" type="number" min="1" value="10" />
+              </label>
+              <button id="generate-custom" class="button primary" type="button">Generar tabla</button>
+            </form>
+
+            <div class="table-summary strip-grid custom-summary">
+              <div>
+                <p class="summary-label">Lógica</p>
+                <strong id="custom-description">En CO₂ baja la recuperación en cada repetición. En O₂ sube la apnea en cada repetición.</strong>
+              </div>
+              <div>
+                <p class="summary-label">Duración total</p>
+                <strong id="custom-total-time">00:00</strong>
+              </div>
+            </div>
+
+            <div id="custom-generated-table" class="generated-table"></div>
+
+            <div class="button-row">
+              <button id="start-custom-session" class="button primary" type="button">Iniciar personalizada</button>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="relax">
+          <section class="panel relax-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 4</p>
+                <h2>Protocolo de relajación</h2>
+              </div>
+              <button id="start-relaxation" class="button secondary" type="button">Lanzar protocolo</button>
+            </div>
+
+            <div class="protocol-grid">
+              <article>
+                <p class="metric-label">Fase 1</p>
+                <strong>Respiración diafragmática</strong>
+                <p>4 segundos inhala, 7 segundos exhala durante 6 a 8 ciclos con animación de expansión.</p>
+              </article>
+              <article>
+                <p class="metric-label">Fase 2</p>
+                <strong>Escaneo corporal</strong>
+                <p>Pies, abdomen, pecho, hombros, mandíbula y ojos con pausas reales y navegación directa entre fases.</p>
+              </article>
+              <article>
+                <p class="metric-label">Fase 3</p>
+                <strong>Última preparación</strong>
+                <p>Inhalación al 80%, imagen mental de hundimiento y espera tranquila de la señal.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="historial">
+          <section class="panel history-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 5</p>
+                <h2>Historial y progresión</h2>
+              </div>
+              <button id="export-history" class="button secondary" type="button">Exportar CSV</button>
+            </div>
+
+            <div class="history-layout">
+              <div class="chart-wrap">
+                <canvas id="progress-chart" height="260"></canvas>
+              </div>
+              <div class="history-side">
+                <article class="metric">
+                  <p class="metric-label">Comparativa reciente</p>
+                  <strong id="performance-summary">Sin datos aún</strong>
+                  <p id="performance-copy">Guarda sesiones para compararte con el promedio de las últimas cuatro.</p>
+                </article>
+                <article class="metric">
+                  <p class="metric-label">Última alerta</p>
+                  <strong id="recovery-alert">Todo estable</strong>
+                  <p id="recovery-alert-copy">Si una sesión cae más del 10% frente al promedio reciente, aparecerá una sugerencia de descanso activo.</p>
+                </article>
+              </div>
+            </div>
+
+            <div id="history-list" class="history-list"></div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-tab-panel="test">
+          <section class="panel test-panel">
+            <div class="panel-head">
+              <div>
+                <p class="section-kicker">Módulo 6</p>
+                <h2>Test Pelizzari de 6 minutos</h2>
+              </div>
+              <span class="badge">Modo especial</span>
+            </div>
+
+            <div class="test-layout">
+              <div class="test-clock">
+                <p class="metric-label">Tiempo restante</p>
+                <strong id="test-timer">06:00</strong>
+              </div>
+              <div class="test-actions">
+                <button id="test-start" class="button primary" type="button">Iniciar test</button>
+                <button id="test-log-lap" class="button secondary" type="button" disabled>Registrar largo</button>
+                <button id="test-start-recovery" class="button secondary" type="button" disabled>Iniciar siguiente apnea</button>
+                <button id="test-finish" class="button ghost" type="button" disabled>Finalizar test</button>
+              </div>
+            </div>
+
+            <div class="metrics-grid">
+              <article class="metric">
+                <p class="metric-label">Largos</p>
+                <strong id="test-laps">0</strong>
+                <p id="test-distance-copy">Distancia total: 0 m</p>
+              </article>
+              <article class="metric">
+                <p class="metric-label">Promedios</p>
+                <strong id="test-averages">Sin datos</strong>
+                <p id="test-averages-copy">Apnea y recuperación se calcularán a partir de tus marcas del test.</p>
+              </article>
+            </div>
+          </section>
+        </section>
+      </main>
+
+      <nav class="bottom-tabs" aria-label="Navegación principal">
+        <button class="tab-button active" type="button" data-tab-target="perfil">Perfil</button>
+        <button class="tab-button" type="button" data-tab-target="tablas">Tablas</button>
+        <button class="tab-button" type="button" data-tab-target="personal">Personal</button>
+        <button class="tab-button" type="button" data-tab-target="relax">Relajación</button>
+        <button class="tab-button" type="button" data-tab-target="historial">Historial</button>
+        <button class="tab-button" type="button" data-tab-target="test">Test 6'</button>
+      </nav>
+    </div>
+
+    <section id="session-overlay" class="immersive hidden" aria-hidden="true">
+      <div class="immersive-top">
+        <p id="immersive-mode-label">Sesión activa</p>
+        <div class="progress-rail"><div id="session-progress" class="progress-bar"></div></div>
+      </div>
+
+      <div class="immersive-body">
+        <p id="phase-label" class="phase-label">PREPARACIÓN</p>
+        <p id="session-count" class="session-count">Rep 0 / 0</p>
+        <h2 id="remaining-time" class="remaining-time">00:10</h2>
+        <p id="phase-detail" class="phase-detail">Prepárate para iniciar.</p>
+      </div>
+
+      <div class="immersive-controls">
+        <button id="pause-session" class="button secondary" type="button">Pausar</button>
+        <button id="skip-phase" class="button secondary" type="button">Saltar</button>
+        <button id="end-session" class="button ghost" type="button">Terminar</button>
+      </div>
+    </section>
+
+    <section id="relax-overlay" class="relaxation hidden" aria-hidden="true">
+      <div class="relax-shell">
+        <p class="eyebrow">Protocolo pre-apnea</p>
+        <h2 id="relax-step-title">Preparación</h2>
+        <p id="relax-step-copy">Cuando estés listo, empieza la guía.</p>
+        <div class="breath-orb" id="breath-orb"></div>
+        <p id="relax-count" class="relax-count">Ciclo 0 / 0</p>
+        <div class="relax-phase-nav">
+          <button id="relax-phase-1" class="button secondary" type="button">Fase 1</button>
+          <button id="relax-phase-2" class="button secondary" type="button">Fase 2</button>
+          <button id="relax-phase-3" class="button secondary" type="button">Fase 3</button>
+        </div>
+        <div class="button-row">
+          <button id="relax-begin" class="button primary" type="button">Empezar guía</button>
+          <button id="relax-skip" class="button ghost" type="button">Saltar</button>
+        </div>
+      </div>
+    </section>
+
+    <template id="table-row-template">
+      <article class="rep-row">
+        <div>
+          <p class="rep-title"></p>
+          <p class="rep-subtitle"></p>
+        </div>
+        <div class="rep-values"></div>
+      </article>
+    </template>
+
+    <script src="app.js" defer></script>
+  </body>
+</html>
