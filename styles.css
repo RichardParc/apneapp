@@ -806,6 +806,7 @@ textarea {
   text-align: center;
 }
 
+
 @media (max-width: 980px) {
   .app-shell {
     padding: 20px 16px 124px;
