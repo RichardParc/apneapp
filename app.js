@@ -893,11 +893,11 @@
     ctx.bezierCurveTo(px + (x - px) * 0.5, py, x - (x - px) * 0.5, y, x, y);
   });
   ctx.strokeStyle = "#456bff";
-  ctx.lineWidth = 1.8;
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Ticks de tiempo en eje X
-  const tickEvery = simulation.totalSeconds <= 120 ? 30 : simulation.totalSeconds <= 300 ? 60 : 120;
+  const tickEvery = simulation.totalSeconds <= 120 ? 320 : simulation.totalSeconds <= 300 ? 60 : 540;
   ctx.font = "10px Segoe UI";
   ctx.textAlign = "center";
   for (let s = 0; s <= simulation.totalSeconds; s += tickEvery) {
@@ -1420,3 +1420,34 @@
   init();
 })();
 
+
+const menu = document.querySelector('.bottom-tabs');
+
+
+const toggleBtn = document.querySelector(".menu-toggle");
+
+
+const overlay = document.createElement('div');
+overlay.className = 'menu-overlay';
+
+document.body.appendChild(overlay);
+
+toggleBtn.addEventListener('click', () => {
+  menu.classList.toggle('open');
+  overlay.classList.toggle('active');
+});
+
+
+overlay.addEventListener('click', () => {
+  menu.classList.remove('open');
+  overlay.classList.remove('active');
+});
+
+const menuButtons = document.querySelectorAll('.bottom-tabs button');
+
+menuButtons.forEach(button => {
+  button.addEventListener('click', () => {
+    menu.classList.remove('open');
+    overlay.classList.remove('active');
+  });
+});
