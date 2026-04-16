@@ -1570,3 +1570,131 @@ menuButtons.forEach(button => {
   document.getElementById('sess-date').value = new Date().toISOString().slice(0,10);
   calcRatio();
   calcPredict();
+/* ─── Módulo Mouthfill Ratio ─── */
+
+(function () {
+  function dBar(m) { return +(1 + (parseFloat(m) || 0) / 10).toFixed(2); }
+  function bToDepth(b) { return +((b - 1) * 10).toFixed(1); }
+
+  function getQuality(r) {
+    if (r < 1.5) return { label: 'Necesita trabajo', cls: 'mf-q-poor' };
+    if (r < 2.0) return { label: 'Básico',           cls: 'mf-q-fair' };
+    if (r < 3.0) return { label: 'Bueno',            cls: 'mf-q-good' };
+    return            { label: 'Excelente',          cls: 'mf-q-excel' };
+  }
+
+  window.calcRatio = function () {
+    const cd = parseFloat(document.getElementById('charge-depth').value) || 0;
+    const rd = parseFloat(document.getElementById('reach-depth').value) || 0;
+    const cb = dBar(cd), rb = dBar(rd);
+    const ratio = +(rb / cb).toFixed(2);
+
+    document.getElementById('r-charge-bar').textContent = cb.toFixed(1);
+    document.getElementById('r-reach-bar').textContent  = rb.toFixed(1);
+    document.getElementById('r-ratio').textContent       = ratio.toFixed(2) + '×';
+    document.getElementById('f-charge').textContent      = cb.toFixed(1);
+    document.getElementById('f-reach').textContent       = rb.toFixed(1);
+    document.getElementById('f-ratio').textContent       = ratio.toFixed(2);
+
+    const pct = Math.min(100, Math.max(3, ((ratio - 1) / 4) * 100));
+    document.getElementById('ratio-bar').style.width = pct + '%';
+
+    const q = getQuality(ratio);
+    document.getElementById('quality-badge').innerHTML =
+      `<span class="mf-quality ${q.cls}">${q.label}</span>`;
+
+    const maxVis = Math.max(rd * 1.2, 30);
+    const cp = 10 + (cd / maxVis) * 72;
+    const rp = Math.min(10 + (rd / maxVis) * 72, 86);
+    const cl = document.getElementById('charge-line');
+    const ct = document.getElementById('charge-tag');
+    const rl = document.getElementById('reach-line');
+    const rt = document.getElementById('reach-tag');
+    if (cl) { cl.style.top = cp + '%'; ct.style.top = cp + '%'; ct.textContent = `carga ${cd} m`; }
+    if (rl) { rl.style.top = rp + '%'; rt.style.top = rp + '%'; rt.textContent = `máximo ${rd} m`; }
+  };
+
+  window.calcPredict = function () {
+    const ratio = parseFloat(document.getElementById('pred-ratio').value) || 1;
+    const cd    = parseFloat(document.getElementById('pred-charge').value) || 0;
+    const cb    = dBar(cd);
+    const pb    = +(cb * ratio).toFixed(2);
+    const pd    = bToDepth(pb);
+
+    document.getElementById('pred-charge-bar').textContent = cb.toFixed(1);
+    document.getElementById('pred-reach-bar').textContent  = pb.toFixed(1);
+    document.getElementById('pred-depth').textContent      = pd.toFixed(1) + ' m';
+    document.getElementById('pf-charge').textContent       = cb.toFixed(1);
+    document.getElementById('pf-ratio').textContent        = ratio.toFixed(2);
+    document.getElementById('pf-result').textContent       = pb.toFixed(1);
+  };
+
+  let mfSessions = [];
+
+  window.addMFSession = function () {
+    const date   = document.getElementById('sess-date').value || new Date().toISOString().slice(0, 10);
+    const cd     = parseFloat(document.getElementById('sess-charge').value) || 0;
+    const rd     = parseFloat(document.getElementById('sess-reach').value)  || 0;
+    const notes  = document.getElementById('sess-notes').value.trim();
+    const ratio  = +(dBar(rd) / dBar(cd)).toFixed(2);
+    mfSessions.unshift({ date, cd, rd, ratio, notes });
+    renderMFSessions();
+    document.getElementById('sess-notes').value = '';
+  };
+
+  window.deleteMFSession = function (i) {
+    mfSessions.splice(i, 1);
+    renderMFSessions();
+  };
+
+  function renderMFSessions() {
+    const tbody  = document.getElementById('sess-body');
+    const avgRow = document.getElementById('avg-row');
+    if (!tbody) return;
+
+    if (!mfSessions.length) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.82rem;">Sin sesiones registradas</td></tr>';
+      if (avgRow) avgRow.style.display = 'none';
+      return;
+    }
+
+    tbody.innerHTML = mfSessions.map((s, i) => `
+      <tr>
+        <td>${s.date}</td>
+        <td>${s.cd} m</td>
+        <td>${s.rd} m</td>
+        <td class="mf-ratio-cell">${s.ratio.toFixed(2)}×</td>
+        <td style="color:var(--muted)">${s.notes || '—'}</td>
+        <td><button class="mf-del-btn" onclick="deleteMFSession(${i})">×</button></td>
+      </tr>
+    `).join('');
+
+    if (avgRow) {
+      const avg = (mfSessions.reduce((a, s) => a + s.ratio, 0) / mfSessions.length).toFixed(2);
+      avgRow.style.display = 'block';
+      document.getElementById('avg-ratio').textContent = avg + '×';
+    }
+  }
+
+  window.mfSwitchTab = function (tab) {
+    const map = { calc: 'mf-panel-calc', predict: 'mf-panel-predict', sessions: 'mf-panel-sessions', ref: 'mf-panel-ref' };
+    document.querySelectorAll('.mf-tab').forEach((btn, i) => {
+      const keys = Object.keys(map);
+      btn.classList.toggle('active', keys[i] === tab);
+    });
+    Object.values(map).forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('active');
+    });
+    const target = document.getElementById(map[tab]);
+    if (target) target.classList.add('active');
+  };
+
+  // Init on load
+  document.addEventListener('DOMContentLoaded', function () {
+    const sd = document.getElementById('sess-date');
+    if (sd) sd.value = new Date().toISOString().slice(0, 10);
+    if (document.getElementById('charge-depth')) calcRatio();
+    if (document.getElementById('pred-ratio'))   calcPredict();
+  });
+})();

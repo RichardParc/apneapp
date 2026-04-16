@@ -51,6 +51,19 @@ button {
   cursor: pointer;
 }
 
+/* animaciones fondo */
+#waveCanvas {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0; 
+  opacity: 0.25;
+}
+
+
 input[type="checkbox"] {
   width: 18px;
   min-height: 18px;
@@ -740,9 +753,8 @@ textarea {
 
 
 .tab-button {
-   width: 100%;
-  
-  text-align: center;
+   width: 100%; 
+  text-align: left;
   padding: 14px 16px;
   min-height: var(--touch);
   border: 0;
@@ -803,7 +815,7 @@ textarea {
   padding: 15px;
   font-size: 12px;
   opacity: 0.6;
-  text-align: center;
+  text-align: right;
 }
 
 
@@ -886,3 +898,419 @@ textarea {
     transition: none;
   }
 }
+/* ─── Módulo Mouthfill Ratio ─── */
+
+/* Sub-tabs internos del módulo */
+.mf-tabs {
+  display: flex;
+  gap: 6px;
+  background: var(--surface);
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  padding: 5px;
+  margin-bottom: 4px;
+}
+
+.mf-tab {
+  flex: 1;
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.82rem;
+  letter-spacing: 0.01em;
+  transition: color var(--transition), background var(--transition);
+  white-space: nowrap;
+}
+
+.mf-tab.active {
+  background: rgba(47, 216, 192, 0.1);
+  color: var(--teal);
+  border: 1px solid rgba(47, 216, 192, 0.14);
+}
+
+.mf-tab:hover:not(.active) {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Sub-paneles internos */
+.mf-panel {
+  display: none;
+}
+
+.mf-panel.active {
+  display: grid;
+  gap: 16px;
+}
+
+/* Tarjeta interna (dentro del panel principal) */
+.mf-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px 20px;
+  border-radius: 18px;
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+/* Etiqueta de sección interna */
+.mf-card-label {
+  margin: 0 0 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--teal);
+  opacity: 0.7;
+}
+
+/* Grid de inputs 2 columnas */
+.mf-field-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* Hint bajo el input */
+.mf-hint {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  opacity: 0.7;
+}
+
+/* Caja de fórmula */
+.mf-formula {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(47, 216, 192, 0.12);
+  background: rgba(47, 216, 192, 0.04);
+  font-size: 0.88rem;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.mf-formula strong {
+  color: var(--teal);
+}
+
+/* Grid de resultados */
+.mf-results-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.mf-result-card {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--line-soft);
+  background: var(--panel-soft);
+  text-align: center;
+}
+
+.mf-result-card.wide {
+  grid-column: 1 / -1;
+}
+
+.mf-val {
+  display: block;
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  line-height: 1;
+}
+
+.mf-val.accent {
+  color: var(--teal);
+}
+
+.mf-lbl {
+  margin-top: 6px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* Badges de calidad — usan colores de la app */
+.mf-quality {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 12px;
+  margin-top: 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.mf-q-poor {
+  background: rgba(255, 122, 106, 0.1);
+  border: 1px solid rgba(255, 122, 106, 0.2);
+  color: var(--danger);
+}
+
+.mf-q-fair {
+  background: rgba(245, 200, 66, 0.1);
+  border: 1px solid rgba(245, 200, 66, 0.18);
+  color: var(--warning);
+}
+
+.mf-q-good {
+  background: rgba(47, 216, 192, 0.08);
+  border: 1px solid rgba(47, 216, 192, 0.18);
+  color: var(--teal);
+}
+
+.mf-q-excel {
+  background: rgba(26, 127, 255, 0.1);
+  border: 1px solid rgba(26, 127, 255, 0.2);
+  color: var(--blue);
+}
+
+/* Barra de progreso del ratio */
+.mf-bar-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+.mf-bar-track {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.mf-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--teal), var(--blue));
+  transition: width 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Visualizador de profundidad */
+.mf-depth-vis {
+  position: relative;
+  height: 130px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--line-soft);
+  background: linear-gradient(
+    180deg,
+    rgba(26, 127, 255, 0.06) 0%,
+    rgba(26, 127, 255, 0.14) 45%,
+    rgba(6, 14, 20, 0.5) 100%
+  );
+}
+
+.mf-surface-label {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 0.72rem;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+.mf-charge-line,
+.mf-base-line,
+.mf-reach-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.mf-charge-line {
+  background: var(--blue);
+  box-shadow: 0 0 5px rgba(26, 127, 255, 0.5);
+}
+
+.mf-base-line{
+  background: rgba(47, 216, 192, 0.15);
+  color: #7ea8b8;
+}
+
+.mf-reach-line {
+  background: var(--teal);
+  box-shadow: 0 0 6px rgba(47, 216, 192, 0.5);
+}
+
+.mf-charge-tag,
+.mf-reach-tag {
+  position: absolute;
+  right: 10px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  padding: 2px 7px;
+  border-radius: 6px;
+  transform: translateY(-50%);
+  transition: top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  white-space: nowrap;
+}
+
+.mf-charge-tag {
+  background: rgba(26, 127, 255, 0.18);
+  color: var(--blue);
+}
+
+.mf-reach-tag {
+  background: rgba(47, 216, 192, 0.15);
+  color: var(--teal);
+}
+
+/* Tabla de sesiones historial */
+.mf-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mf-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mf-table td {
+  padding: 10px 10px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(100, 180, 210, 0.05);
+}
+
+.mf-table tr:last-child td {
+  border-bottom: none;
+}
+
+.mf-table td.mf-ratio-cell {
+  color: var(--teal);
+  font-weight: 600;
+}
+
+.mf-avg-row {
+  text-align: right;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line-soft);
+}
+
+.mf-avg-row strong {
+  color: var(--teal);
+  font-size: 1rem;
+}
+
+/* Botón añadir sesión */
+.mf-add-btn {
+  width: 100%;
+  min-height: 44px;
+  margin-top: 8px;
+  background: transparent;
+  border: 1px dashed rgba(100, 180, 210, 0.18);
+  border-radius: 12px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+
+.mf-add-btn:hover {
+  background: var(--surface);
+  border-color: rgba(47, 216, 192, 0.25);
+  color: var(--teal);
+}
+
+/* Botón eliminar fila */
+.mf-del-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 1rem;
+  padding: 0 4px;
+  opacity: 0.5;
+  transition: opacity var(--transition), color var(--transition);
+}
+
+.mf-del-btn:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+
+/* Tabla de referencia */
+.mf-ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.mf-ref-table th {
+  text-align: left;
+  padding: 6px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.mf-ref-table td {
+  padding: 9px 10px;
+  color: var(--muted);
+  border-bottom: 1px solid rgba(100, 180, 210, 0.05);
+}
+
+.mf-ref-table tr:last-child td { border-bottom: none; }
+.mf-ref-table td:first-child { color: var(--blue); font-weight: 500; }
+
+/* Aviso informativo */
+.mf-notice {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(245, 200, 66, 0.15);
+  background: rgba(245, 200, 66, 0.05);
+  font-size: 0.82rem;
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+/* Responsive */
+@media (max-width: 700px) {
+  .mf-field-grid,
+  .mf-results-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mf-result-card.wide {
+    grid-column: 1;
+  }
+
+  .mf-tabs {
+    gap: 4px;
+  }
+
+  .mf-tab {
+    font-size: 0.76rem;
+    padding: 0 6px;
+  }
+}
+
+

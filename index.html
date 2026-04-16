@@ -12,7 +12,8 @@
     <title>Apneapp</title>
   </head>
   <body>
-    
+  <canvas id="waveCanvas"></canvas>
+
     <div class="app-shell">
       <button class="menu-toggle" aria-label="Abrir menú">
   ☰
@@ -73,7 +74,7 @@
           </section>
         </section>
 
-        <section class="tab-panel" data-tab-panel="tablas">
+        <section class="tab-panel " data-tab-panel="tablas">
           <section class="panel tables-panel">
             <div class="panel-head">
               <div>
@@ -327,215 +328,208 @@
           </section>
         </section>
 
-        <!--Modulo Calculadora de mouthfill -->
-
+        <!-- Módulo 7: Calculadora de mouthfill -->
         <section class="tab-panel" data-tab-panel="mouthfillratio">
-          <section class="panel test-panel">
+          <section class="panel">
             <div class="panel-head">
               <div>
-                <p class="section-kicker">Mouthfill Ratio</p>
-                <h2>Calculadora del ratio de mouthfill</h2>
+                <p class="section-kicker">Módulo 7</p>
+                <h2>Calculadora Mouthfill</h2>
               </div>
-              <span class="badge">CALCULATE MOUTHFILL</span>
-            </div>  <div class="tabs">
-    <button class="tab active" onclick="switchTab('calc')">Calcular ratio</button>
-    <button class="tab" onclick="switchTab('predict')">Predecir prof.</button>
-    <button class="tab" onclick="switchTab('sessions')">Historial</button>
-    <button class="tab" onclick="switchTab('ref')">Referencia</button>
-  </div>
- 
-  <!-- ─── PANEL CALCULAR RATIO ─── -->
-  <div id="panel-calc" class="panel active">
-    <div class="card">
-      <div class="card-label">Datos del buceo</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Profundidad de carga (m)</label>
-          <input type="number" id="charge-depth" value="0" min="0" step="0.5" oninput="calcRatio()">
-          <span class="hint">Dónde tomaste el mouthfill</span>
-        </div>
-        <div class="field">
-          <label>Profundidad máxima (m)</label>
-          <input type="number" id="reach-depth" value="15" min="0" step="0.5" oninput="calcRatio()">
-          <span class="hint">Última ecualización posible</span>
-        </div>
-      </div>
-      <div class="formula-box" id="calc-formula">
-        MF Ratio = <strong id="f-reach">2.5</strong> bar / <strong id="f-charge">1.0</strong> bar = <strong id="f-ratio">2.50</strong>
-      </div>
-    </div>
- 
-    <div class="card">
-      <div class="card-label">Resultado</div>
-      <div class="results-grid">
-        <div class="result-card">
-          <div class="val" id="r-charge-bar">1.0</div>
-          <div class="lbl">Presión carga (bar)</div>
-        </div>
-        <div class="result-card">
-          <div class="val" id="r-reach-bar">2.5</div>
-          <div class="lbl">Presión alcanzada (bar)</div>
-        </div>
-        <div class="result-card wide" style="text-align:center;">
-          <div class="val accent" id="r-ratio">2.50×</div>
-          <div class="lbl">Ratio MF</div>
-          <div id="quality-badge"></div>
-        </div>
-      </div>
- 
-      <div class="ratio-bar-wrap">
-        <div class="ratio-bar-header">
-          <span>ratio 1.0×</span><span>ratio 5.0×</span>
-        </div>
-        <div class="ratio-bar-track">
-          <div class="ratio-bar-fill" id="ratio-bar" style="width:37%"></div>
-        </div>
-      </div>
- 
-      <div class="depth-vis" id="depth-vis">
-        <div class="depth-water"></div>
-        <div class="surface-label">superficie 0m</div>
-        <div class="depth-charge-line" id="charge-line" style="top:15%"></div>
-        <div class="depth-charge-tag" id="charge-tag" style="top:15%">carga 0m</div>
-        <div class="depth-reach-line" id="reach-line" style="top:60%"></div>
-        <div class="depth-reach-tag" id="reach-tag" style="top:60%">máximo 15m</div>
-      </div>
-    </div>
-  </div>
- 
-  <!-- ─── PANEL PREDECIR ─── -->
-  <div id="panel-predict" class="panel">
-    <div class="card">
-      <div class="card-label">Parámetros de predicción</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Tu ratio MF conocido</label>
-          <input type="number" id="pred-ratio" value="2.5" min="1" max="10" step="0.1" oninput="calcPredict()">
-          <span class="hint">Calculado en la pestaña anterior</span>
-        </div>
-        <div class="field">
-          <label>Profundidad de carga planeada (m)</label>
-          <input type="number" id="pred-charge" value="20" min="0" step="1" oninput="calcPredict()">
-          <span class="hint">Dónde tomarás el mouthfill</span>
-        </div>
-      </div>
-      <div class="formula-box" id="pred-formula">
-        Presión estimada = <strong id="pf-charge">3.0</strong> bar × <strong id="pf-ratio">2.5</strong> = <strong id="pf-result">7.5</strong> bar
-      </div>
-    </div>
- 
-    <div class="card">
-      <div class="card-label">Profundidad estimada</div>
-      <div class="results-grid">
-        <div class="result-card">
-          <div class="val" id="pred-charge-bar">3.0</div>
-          <div class="lbl">Presión carga (bar)</div>
-        </div>
-        <div class="result-card">
-          <div class="val" id="pred-reach-bar">7.5</div>
-          <div class="lbl">Presión estimada (bar)</div>
-        </div>
-        <div class="result-card wide" style="text-align:center;">
-          <div class="val accent" id="pred-depth">65 m</div>
-          <div class="lbl">Profundidad de ecualización estimada</div>
-        </div>
-      </div>
-      <div class="formula-box" style="margin-top:1rem; font-size:11px;">
-        ⚠ Esta es una estimación teórica. Factores como fuga de aire,
-        técnica y condiciones físicas pueden afectar el resultado real.
-        Practica siempre con buddy y progresión gradual.
-      </div>
-    </div>
-  </div>
- 
-  <!-- ─── PANEL HISTORIAL ─── -->
-  <div id="panel-sessions" class="panel">
-    <div class="card">
-      <div class="card-label">Nueva sesión</div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Fecha</label>
-          <input type="date" id="sess-date" style="font-size:14px;">
-        </div>
-        <div class="field">
-          <label>Notas (opcional)</label>
-          <input type="text" id="sess-notes" placeholder="ej: FRC, piscina...">
-        </div>
-      </div>
-      <div class="field-grid">
-        <div class="field">
-          <label>Profundidad carga (m)</label>
-          <input type="number" id="sess-charge" value="0" min="0" step="0.5">
-        </div>
-        <div class="field">
-          <label>Profundidad máxima (m)</label>
-          <input type="number" id="sess-reach" value="15" min="0" step="0.5">
-        </div>
-      </div>
-      <button class="add-btn" onclick="addSession()">+ registrar sesión</button>
-    </div>
- 
-    <div class="card">
-      <div class="card-label">Sesiones registradas</div>
-      <table class="sessions-table">
-        <thead><tr>
-          <th>Fecha</th><th>Carga</th><th>Máx</th><th>Ratio</th><th>Notas</th><th></th>
-        </tr></thead>
-        <tbody id="sess-body">
-          <tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:1.5rem 0; font-family:'DM Mono',monospace; font-size:11px;">sin sesiones registradas</td></tr>
-        </tbody>
-      </table>
-      <div class="avg-row" id="avg-row" style="display:none">
-        ratio promedio: <strong id="avg-ratio">—</strong>
-      </div>
-    </div>
-  </div>
- 
-  <!-- ─── PANEL REFERENCIA ─── -->
-  <div id="panel-ref" class="panel">
-    <div class="card">
-      <div class="card-label">Conversión metros → bar</div>
-      <table class="ref-table">
-        <thead><tr><th>Profundidad (m)</th><th>Presión (bar)</th><th>Fórmula</th></tr></thead>
-        <tbody>
-          <tr><td>0 m (superficie)</td><td>1.0 bar</td><td>1 + 0/10</td></tr>
-          <tr><td>10 m</td><td>2.0 bar</td><td>1 + 10/10</td></tr>
-          <tr><td>20 m</td><td>3.0 bar</td><td>1 + 20/10</td></tr>
-          <tr><td>30 m</td><td>4.0 bar</td><td>1 + 30/10</td></tr>
-          <tr><td>40 m</td><td>5.0 bar</td><td>1 + 40/10</td></tr>
-          <tr><td>50 m</td><td>6.0 bar</td><td>1 + 50/10</td></tr>
-          <tr><td>65 m</td><td>7.5 bar</td><td>1 + 65/10</td></tr>
-        </tbody>
-      </table>
-    </div>
- 
-    <div class="card">
-      <div class="card-label">Clasificación del ratio</div>
-      <table class="ref-table">
-        <thead><tr><th>Ratio MF</th><th>Nivel</th><th>Notas</th></tr></thead>
-        <tbody>
-          <tr><td>1.0 – 1.5×</td><td><span class="quality q-poor">Necesita trabajo</span></td><td>Técnica o volumen limitados</td></tr>
-          <tr><td>1.5 – 2.0×</td><td><span class="quality q-fair">Básico</span></td><td>Funcional para profundidades moderadas</td></tr>
-          <tr><td>2.0 – 3.0×</td><td><span class="quality q-good">Bueno</span></td><td>Buen manejo del aire</td></tr>
-          <tr><td>3.0×+</td><td><span class="quality q-excel">Excelente</span></td><td>Alta eficiencia</td></tr>
-        </tbody>
-      </table>
-    </div>
- 
-    <div class="card">
-      <div class="card-label">Fórmulas clave</div>
-      <div class="formula-box" style="line-height:2.2;">
-        <strong>Presión (bar)</strong> = 1 + profundidad(m) / 10<br>
-        <strong>MF Ratio</strong> = Presión alcanzada / Presión de carga<br>
-        <strong>Profundidad estimada</strong> = (Presión carga × Ratio − 1) × 10
-      </div>
-    </div>
-  </div>
-</div>
-
-            <div class="test-layout">
-              
+              <span class="badge">Ratio MF</span>
             </div>
+
+            <!-- Sub-tabs -->
+            <div class="mf-tabs">
+              <button class="mf-tab active" type="button" onclick="mfSwitchTab('calc')">Calcular ratio</button>
+              <button class="mf-tab" type="button" onclick="mfSwitchTab('predict')">Predecir prof.</button>
+              <button class="mf-tab" type="button" onclick="mfSwitchTab('sessions')">Historial</button>
+              <button class="mf-tab" type="button" onclick="mfSwitchTab('ref')">Referencia</button>
+            </div>
+
+            <!-- ── Calcular ratio ── -->
+            <div id="mf-panel-calc" class="mf-panel active">
+
+              <div class="mf-card">
+                <p class="mf-card-label">Datos del buceo</p>
+                <div class="mf-field-grid">
+                  <label>
+                    <span>Profundidad de carga (m)</span>
+                    <input type="number" id="charge-depth" value="0" min="0" step="0.5" oninput="calcRatio()">
+                    <span class="mf-hint">Dónde tomaste el mouthfill</span>
+                  </label>
+                  <label>
+                    <span>Profundidad máxima (m)</span>
+                    <input type="number" id="reach-depth" value="15" min="0" step="0.5" oninput="calcRatio()">
+                    <span class="mf-hint">Última ecualización posible</span>
+                  </label>
+                </div>
+                <div class="mf-formula" id="calc-formula">
+                  MF Ratio = <strong id="f-reach">2.5</strong> bar / <strong id="f-charge">1.0</strong> bar = <strong id="f-ratio">2.50</strong>
+                </div>
+              </div>
+
+              <div class="mf-card">
+                <p class="mf-card-label">Resultado</p>
+                <div class="mf-results-grid">
+                  <div class="mf-result-card">
+                    <span class="mf-val" id="r-charge-bar">1.0</span>
+                    <p class="mf-lbl">Presión carga (bar)</p>
+                  </div>
+                  <div class="mf-result-card">
+                    <span class="mf-val" id="r-reach-bar">2.5</span>
+                    <p class="mf-lbl">Presión alcanzada (bar)</p>
+                  </div>
+                  <div class="mf-result-card wide" style="text-align:center;">
+                    <span class="mf-val accent" id="r-ratio">2.50×</span>
+                    <p class="mf-lbl">Ratio MF</p>
+                    <div id="quality-badge"></div>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="mf-bar-header">
+                    <span>ratio 1.0×</span><span>ratio 5.0×</span>
+                  </div>
+                  <div class="mf-bar-track">
+                    <div class="mf-bar-fill" id="ratio-bar" style="width:37%"></div>
+                  </div>
+                </div>
+
+                <div class="mf-depth-vis">
+                  <span class="mf-surface-label">superficie 0 m</span>
+                  <div class="mf-base-line"  style="top:5%"></div>
+
+                  <div class="mf-charge-line" id="charge-line" style="top:15%"></div>
+                  <div class="mf-charge-tag" id="charge-tag" style="top:15%">carga 0 m</div>
+                  <div class="mf-reach-line" id="reach-line" style="top:60%"></div>
+                  <div class="mf-reach-tag" id="reach-tag" style="top:60%">máximo 15 m</div>
+                </div>  
+              </div>
+
+            </div>
+
+            <!-- ── Predecir ── -->
+            <div id="mf-panel-predict" class="mf-panel">
+
+              <div class="mf-card">
+                <p class="mf-card-label">Parámetros de predicción</p>
+                <div class="mf-field-grid">
+                  <label>
+                    <span>Tu ratio MF conocido</span>
+                    <input type="number" id="pred-ratio" value="2.5" min="1" max="10" step="0.1" oninput="calcPredict()">
+                    <span class="mf-hint">Calculado en la pestaña anterior</span>
+                  </label>
+                  <label>
+                    <span>Profundidad de carga planeada (m)</span>
+                    <input type="number" id="pred-charge" value="20" min="0" step="1" oninput="calcPredict()">
+                    <span class="mf-hint">Dónde tomarás el mouthfill</span>
+                  </label>
+                </div>
+                <div class="mf-formula">
+                  Presión estimada = <strong id="pf-charge">3.0</strong> bar × <strong id="pf-ratio">2.5</strong> = <strong id="pf-result">7.5</strong> bar
+                </div>
+              </div>
+
+              <div class="mf-card">
+                <p class="mf-card-label">Profundidad estimada</p>
+                <div class="mf-results-grid">
+                  <div class="mf-result-card">
+                    <span class="mf-val" id="pred-charge-bar">3.0</span>
+                    <p class="mf-lbl">Presión carga (bar)</p>
+                  </div>
+                  <div class="mf-result-card">
+                    <span class="mf-val" id="pred-reach-bar">7.5</span>
+                    <p class="mf-lbl">Presión estimada (bar)</p>
+                  </div>
+                  <div class="mf-result-card wide" style="text-align:center;">
+                    <span class="mf-val accent" id="pred-depth">65 m</span>
+                    <p class="mf-lbl">Profundidad de ecualización estimada</p>
+                  </div>
+                </div>
+                <div class="mf-notice">
+                  Estimación teórica. Factores como fuga de aire, técnica y condición física pueden afectar el resultado real. Practica siempre con buddy y progresión gradual.
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ── Historial ── -->
+            <div id="mf-panel-sessions" class="mf-panel">
+
+              <div class="mf-card">
+                <p class="mf-card-label">Nueva sesión</p>
+                <div class="mf-field-grid">
+                  <label>
+                    <span>Fecha</span>
+                    <input type="date" id="sess-date">
+                  </label>
+                  <label>
+                    <span>Notas (opcional)</span>
+                    <input type="text" id="sess-notes" placeholder="ej: FRC, piscina...">
+                  </label>
+                </div>
+                <div class="mf-field-grid">
+                  <label>
+                    <span>Profundidad carga (m)</span>
+                    <input type="number" id="sess-charge" value="0" min="0" step="0.5">
+                  </label>
+                  <label>
+                    <span>Profundidad máxima (m)</span>
+                    <input type="number" id="sess-reach" value="15" min="0" step="0.5">
+                  </label>
+                </div>
+                <button class="mf-add-btn" onclick="addMFSession()">+ registrar sesión</button>
+              </div>
+
+              <div class="mf-card">
+                <p class="mf-card-label">Sesiones registradas</p>
+                <table class="mf-table">
+                  <thead><tr>
+                    <th>Fecha</th><th>Carga</th><th>Máx</th><th>Ratio</th><th>Notas</th><th></th>
+                  </tr></thead>
+                  <tbody id="sess-body">
+                    <tr><td colspan="6" style="text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.82rem;">Sin sesiones registradas</td></tr>
+                  </tbody>
+                </table>
+                <div class="mf-avg-row" id="avg-row" style="display:none">
+                  Ratio promedio: <strong id="avg-ratio">—</strong>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ── Referencia ── -->
+            <div id="mf-panel-ref" class="mf-panel">
+
+        
+
+              <div class="mf-card">
+                <p class="mf-card-label">Clasificación del ratio</p>
+                <table class="mf-ref-table">
+                  <thead><tr><th>Ratio MF</th><th>Nivel</th><th>Notas</th></tr></thead>
+                  <tbody>
+                    <tr><td>1.0 – 1.5×</td><td><span class="mf-quality mf-q-poor">Necesita trabajo</span></td><td>Técnica o volumen limitados</td></tr>
+                    <tr><td>1.5 – 2.0×</td><td><span class="mf-quality mf-q-fair">Básico</span></td><td>Funcional para profundidades moderadas</td></tr>
+                    <tr><td>2.0 – 3.0×</td><td><span class="mf-quality mf-q-good">Bueno</span></td><td>Buen manejo del aire</td></tr>
+                    <tr><td>3.0×+</td><td><span class="mf-quality mf-q-excel">Excelente</span></td><td>Alta eficiencia</td></tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="mf-card">
+                <p class="mf-card-label">Fórmulas clave</p>
+                <div class="mf-formula" style="line-height:2.2;">
+                  <strong>Presión (bar)</strong> = 1 + profundidad(m) / 10<br>
+                  <strong>MF Ratio</strong> = Presión alcanzada / Presión de carga<br>
+                  <strong>Prof. estimada</strong> = (Presión carga × Ratio − 1) × 10
+                </div>
+              </div>
+
+            </div>
+
+          </section>
+        </section>
 
         </section>
 
@@ -554,7 +548,7 @@
         <button class="tab-button" type="button" data-tab-target="test">Test 6'</button>
         <button class="tab-button" type="button" data-tab-target="mouthfillratio">Mouthfill Ratio</button>
         <div class="menu-footer">
-  By RichardParc.
+  BY RICHARD PARC
 </div>
       </nav>
     </div>
@@ -609,6 +603,8 @@
       </article>
     </template>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="breathing-animations.js"></script>
     <script src="app.js" defer></script>
 
 
