@@ -1,17 +1,19 @@
-const CACHE_NAME = "blue-hold-v1";
+const CACHE_NAME = "blue-hold-v3";
 const APP_ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
+  "./auth-sync.js",
+  "./supabase-config.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-maskable.svg",
-  "./audio/10-segundos.mp3",
-  "./audio/30-segs.mp3",
-  "./audio/conteo-respira.mp3",
-  "./audio/counter-toptime.mp3",
-  "./audio/mantra.mp3",
+  "./audio/10segundos.mp3",
+  "./audio/20segundos.mp3",
+  "./audio/30segundos.mp3",
+  "./audio/counter_respira.mp3",
+  "./audio/minuto.mp3",
 ];
 
 self.addEventListener("install", (event) => {

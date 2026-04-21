@@ -71,6 +71,56 @@
                 <div id="goal-list" class="goal-list"></div>
               </article>
             </div>
+
+            <article class="metric auth-card">
+              <div class="auth-head">
+                <div>
+                  <p class="metric-label">Cuenta y sincronización</p>
+                  <strong id="auth-status-title">Modo local</strong>
+                </div>
+                <span id="auth-sync-pill" class="badge">Sin nube</span>
+              </div>
+              <p id="auth-status-copy" class="history-meta">Inicia con Google para guardar perfil, historial y preferencias en la nube con Supabase.</p>
+              <div class="auth-actions">
+                <button id="auth-google" class="button primary" type="button">Entrar con Google</button>
+                <button id="auth-sync-now" class="button secondary" type="button" disabled>Sincronizar ahora</button>
+                <button id="auth-signout" class="button ghost" type="button" hidden>Cerrar sesión</button>
+              </div>
+            </article>
+
+            <article class="metric alert-config-card profile-alert-card">
+              <div class="alert-header">
+                <div>
+                  <p class="metric-label">Alertas de sesión</p>
+                  <strong class="inline-strong">Configura una vez cómo quieres entrenar</strong>
+                </div>
+                <button id="toggle-alerts" class="button ghost small-button" type="button">Ocultar</button>
+              </div>
+                <div id="alerts-body" class="alert-body">
+                  <div class="alert-group">
+                    <p class="metric-label">Antes de apnea</p>
+                    <label class="alert-toggle"><input id="beep-pre-thirty-enabled" type="checkbox" checked /> Audios previos a 1:00, 0:30 y 0:20</label>
+                    <label class="alert-toggle"><input id="beep-pre-ten-enabled" type="checkbox" checked /> Audio a 10 segundos</label>
+                    <label class="alert-toggle"><input id="beep-pre-five-enabled" type="checkbox" checked /> Pitido a 5 segundos</label>
+                  </div>
+
+                  <div class="alert-group">
+                    <p class="metric-label">Durante apnea</p>
+                    <div class="alert-option alert-option-with-input">
+                      <label class="alert-toggle"><input id="beep-apnea-interval-enabled" type="checkbox" checked /> Pitido cada</label>
+                      <input id="beep-apnea-interval" type="number" min="5" step="5" value="30" />
+                      <span>segundos</span>
+                    </div>
+                    <label class="alert-toggle alert-toggle-disabled"><input id="mantra-enabled" type="checkbox" disabled /> Mantra no cargado</label>
+                  </div>
+
+                <div class="alert-group">
+                  <p class="metric-label">Final de apnea</p>
+                  <label class="alert-toggle"><input id="beep-apnea-final-enabled" type="checkbox" checked /> Audio a 10 segundos del final</label>
+                  <label class="alert-toggle"><input id="beep-apnea-five-enabled" type="checkbox" checked /> Audio a 5 segundos del final</label>
+                </div>
+              </div>
+            </article>
           </section>
         </section>
 
@@ -114,41 +164,7 @@
               </div>
             </div>
 
-            <div class="tables-tools">
-              <article class="metric alert-config-card">
-                <div class="alert-header">
-                  <div>
-                    <p class="metric-label">Alertas</p>
-                    <strong class="inline-strong">Avisos útiles durante la sesión</strong>
-                  </div>
-                  <button id="toggle-alerts" class="button ghost small-button" type="button">Ocultar</button>
-                </div>
-                <div id="alerts-body" class="alert-body">
-                  <div class="alert-group">
-                    <p class="metric-label">Antes de apnea</p>
-                    <label class="alert-toggle"><input id="beep-pre-thirty-enabled" type="checkbox" checked /> Audio a 30 segundos</label>
-                    <label class="alert-toggle"><input id="beep-pre-ten-enabled" type="checkbox" checked /> Audio a 10 segundos</label>
-                    <label class="alert-toggle"><input id="beep-pre-five-enabled" type="checkbox" checked /> Audio a 5 segundos</label>
-                  </div>
-
-                  <div class="alert-group">
-                    <p class="metric-label">Durante apnea</p>
-                    <div class="alert-option alert-option-with-input">
-                      <label class="alert-toggle"><input id="beep-apnea-interval-enabled" type="checkbox" checked /> Pitido cada</label>
-                      <input id="beep-apnea-interval" type="number" min="5" step="5" value="30" />
-                      <span>segundos</span>
-                    </div>
-                    <label class="alert-toggle"><input id="mantra-enabled" type="checkbox" checked /> Mantra a mitad de apnea</label>
-                  </div>
-
-                  <div class="alert-group">
-                    <p class="metric-label">Final de apnea</p>
-                    <label class="alert-toggle"><input id="beep-apnea-final-enabled" type="checkbox" checked /> Audio a 10 segundos del final</label>
-                    <label class="alert-toggle"><input id="beep-apnea-five-enabled" type="checkbox" checked /> Audio a 5 segundos del final</label>
-                  </div>
-                </div>
-              </article>
-
+            <div class="tables-tools tables-tools-preview-only">
               <article class="metric preview-card">
                 <div class="preview-head">
                   <div>
@@ -226,35 +242,115 @@
           </section>
         </section>
 
-        <section class="tab-panel" data-tab-panel="relax">
-          <section class="panel relax-panel">
-            <div class="panel-head">
-              <div>
-                <p class="section-kicker">Módulo 4</p>
-                <h2>Protocolo de relajación</h2>
-              </div>
-              <button id="start-relaxation" class="button secondary" type="button">Lanzar protocolo</button>
-            </div>
+        <!-- Módulo Respiración Cuadrada -->
+        <!-- Módulo Respiración Cuadrada -->
+<section class="tab-panel" data-tab-panel="respiracion">
+  <section class="panel sq-panel">
+    <div class="panel-head">
+      <div>
+        <p class="section-kicker">Módulo 4</p>
+        <h2>Respiración cuadrada</h2>
+      </div>
+      <span class="badge">Respiración Cuadrada</span>
+    </div>
 
-            <div class="protocol-grid">
-              <article>
-                <p class="metric-label">Fase 1</p>
-                <strong>Respiración diafragmática</strong>
-                <p>4 segundos inhala, 7 segundos exhala durante 6 a 8 ciclos con animación de expansión.</p>
-              </article>
-              <article>
-                <p class="metric-label">Fase 2</p>
-                <strong>Escaneo corporal</strong>
-                <p>Pies, abdomen, pecho, hombros, mandíbula y ojos con pausas reales y navegación directa entre fases.</p>
-              </article>
-              <article>
-                <p class="metric-label">Fase 3</p>
-                <strong>Última preparación</strong>
-                <p>Respiración de purga y empieza a respirar como si quisieras dormir.</p>
-              </article>
+    <div class="sq-intro">
+      <p class="history-meta">Crea una secuencia estable para regular el sistema nervioso antes o después del entrenamiento.</p>
+      <div class="sq-presets">
+        <button class="sq-preset active" type="button" data-preset="4-4-4-4-5">Calma 4-4-4-4</button>
+        <button class="sq-preset" type="button" data-preset="4-2-6-2-6">Bajar HR 4-2-6-2</button>
+        <button class="sq-preset" type="button" data-preset="5-5-5-5-4">Enfoque 5-5-5-5</button>
+      </div>
+    </div>
+
+    <div class="sq-layout">
+      <div class="sq-main">
+        <div class="sq-config-card">
+          <div class="sq-config-row">
+            <label class="sq-stepper">
+              <span class="sq-stepper-label">Inhala</span>
+              <div class="sq-stepper-controls">
+                <input type="number" id="sq-inhale" class="sq-input" value="4" min="1" max="30">
+                <small>s</small>
+              </div>
+            </label>
+
+            <label class="sq-stepper">
+              <span class="sq-stepper-label">Contén</span>
+              <div class="sq-stepper-controls">
+                <input type="number" id="sq-hold1" class="sq-input" value="4" min="0" max="30">
+                <small>s</small>
+              </div>
+            </label>
+
+            <label class="sq-stepper">
+              <span class="sq-stepper-label">Exhala</span>
+              <div class="sq-stepper-controls">
+                <input type="number" id="sq-exhale" class="sq-input" value="4" min="1" max="30">
+                <small>s</small>
+              </div>
+            </label>
+
+            <label class="sq-stepper">
+              <span class="sq-stepper-label">Contén</span>
+              <div class="sq-stepper-controls">
+                <input type="number" id="sq-hold2" class="sq-input" value="4" min="0" max="30">
+                <small>s</small>
+              </div>
+            </label>
+
+            <label class="sq-stepper sq-stepper-cycles">
+              <span class="sq-stepper-label">Ciclos</span>
+              <div class="sq-stepper-controls">
+                <input type="number" id="sq-cycles" class="sq-input" value="5" min="1" max="30">
+                <small>×</small>
+              </div>
+            </label>
+          </div>
+
+          <div class="sq-summary">
+            <div class="sq-summary-item">
+              <span class="sq-summary-label">Ciclo</span>
+              <strong id="sq-total-cycle">00:16</strong>
             </div>
-          </section>
-        </section>
+            <div class="sq-summary-item">
+              <span class="sq-summary-label">Sesión</span>
+              <strong id="sq-total-session">01:20</strong>
+            </div>
+            <div class="sq-summary-item">
+              <span class="sq-summary-label">Objetivo</span>
+              <strong id="sq-flow-note">Regular y estabilizar</strong>
+            </div>
+          </div>
+        </div>
+
+        <div class="sq-controls">
+          <button id="sq-start" class="button primary" type="button">Iniciar</button>
+          <button id="sq-stop" class="button ghost" type="button" style="display:none">Detener</button>
+        </div>
+      </div>
+
+      <div class="sq-viz-card">
+        <div class="sq-viz-wrap">
+          <div class="sq-canvas-wrap">
+            <canvas id="sq-canvas" width="280" height="280"></canvas>
+
+            <span class="sq-side-label sq-side-top" id="sq-lbl-inhale">Inhala</span>
+            <span class="sq-side-label sq-side-right" id="sq-lbl-hold1">Contén</span>
+            <span class="sq-side-label sq-side-bottom" id="sq-lbl-exhale">Exhala</span>
+            <span class="sq-side-label sq-side-left" id="sq-lbl-hold2">Contén</span>
+
+            <div class="sq-center-info">
+              <span class="sq-center-phase" id="sq-phase-name">Box Breathing</span>
+              <span class="sq-center-secs" id="sq-seconds">0</span>
+              <span class="sq-center-cycle" id="sq-cycle-count"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</section>
 
         
 
@@ -343,7 +439,6 @@
             <div class="mf-tabs">
               <button class="mf-tab active" type="button" onclick="mfSwitchTab('calc')">Calcular ratio</button>
               <button class="mf-tab" type="button" onclick="mfSwitchTab('predict')">Predecir prof.</button>
-              <button class="mf-tab" type="button" onclick="mfSwitchTab('sessions')">Historial</button>
               <button class="mf-tab" type="button" onclick="mfSwitchTab('ref')">Referencia</button>
             </div>
 
@@ -454,51 +549,6 @@
 
             </div>
 
-            <!-- ── Historial ── -->
-            <div id="mf-panel-sessions" class="mf-panel">
-
-              <div class="mf-card">
-                <p class="mf-card-label">Nueva sesión</p>
-                <div class="mf-field-grid">
-                  <label>
-                    <span>Fecha</span>
-                    <input type="date" id="sess-date">
-                  </label>
-                  <label>
-                    <span>Notas (opcional)</span>
-                    <input type="text" id="sess-notes" placeholder="ej: FRC, piscina...">
-                  </label>
-                </div>
-                <div class="mf-field-grid">
-                  <label>
-                    <span>Profundidad carga (m)</span>
-                    <input type="number" id="sess-charge" value="0" min="0" step="0.5">
-                  </label>
-                  <label>
-                    <span>Profundidad máxima (m)</span>
-                    <input type="number" id="sess-reach" value="15" min="0" step="0.5">
-                  </label>
-                </div>
-                <button class="mf-add-btn" onclick="addMFSession()">+ registrar sesión</button>
-              </div>
-
-              <div class="mf-card">
-                <p class="mf-card-label">Sesiones registradas</p>
-                <table class="mf-table">
-                  <thead><tr>
-                    <th>Fecha</th><th>Carga</th><th>Máx</th><th>Ratio</th><th>Notas</th><th></th>
-                  </tr></thead>
-                  <tbody id="sess-body">
-                    <tr><td colspan="6" style="text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.82rem;">Sin sesiones registradas</td></tr>
-                  </tbody>
-                </table>
-                <div class="mf-avg-row" id="avg-row" style="display:none">
-                  Ratio promedio: <strong id="avg-ratio">—</strong>
-                </div>
-              </div>
-
-            </div>
-
             <!-- ── Referencia ── -->
             <div id="mf-panel-ref" class="mf-panel">
 
@@ -543,7 +593,7 @@
         <button class="tab-button active" type="button" data-tab-target="perfil">Perfil</button>
         <button class="tab-button" type="button" data-tab-target="tablas">Tablas</button>
         <button class="tab-button" type="button" data-tab-target="personal">Personal</button>
-        <button class="tab-button" type="button" data-tab-target="relax">Relajación</button>
+        <button class="tab-button" type="button" data-tab-target="respiracion">Respiración</button>
         <button class="tab-button" type="button" data-tab-target="historial">Historial</button>
         <button class="tab-button" type="button" data-tab-target="test">Test 6'</button>
         <button class="tab-button" type="button" data-tab-target="mouthfillratio">Mouthfill Ratio</button>
@@ -573,25 +623,7 @@
       </div>
     </section>
 
-    <section id="relax-overlay" class="relaxation hidden" aria-hidden="true">
-      <div class="relax-shell">
-        <p class="eyebrow">Protocolo pre-apnea</p>
-        <h2 id="relax-step-title">Preparación</h2>
-        <p id="relax-step-copy">Cuando estés listo, empieza la guía.</p>
-        <div class="breath-orb" id="breath-orb"></div>
-        <p id="relax-count" class="relax-count">Ciclo 0 / 0</p>
-        <div class="relax-phase-nav">
-          <button id="relax-phase-1" class="button secondary" type="button">Fase 1</button>
-          <button id="relax-phase-2" class="button secondary" type="button">Fase 2</button>
-          <button id="relax-phase-3" class="button secondary" type="button">Fase 3</button>
-        </div>
-        <div class="button-row">
-          <button id="relax-begin" class="button primary" type="button">Empezar guía</button>
-          <button id="relax-skip" class="button ghost" type="button">Saltar</button>
-        </div>
-      </div>
-    
-    </section>
+
 
     <template id="table-row-template">
       <article class="rep-row">
@@ -603,9 +635,11 @@
       </article>
     </template>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
     <script src="breathing-animations.js"></script>
     <script src="app.js" defer></script>
+    <script src="auth-sync.js" defer></script>
 
 
   </body>

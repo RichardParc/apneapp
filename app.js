@@ -15,7 +15,6 @@
     currentSessionMeta: null,
     session: null,
     test: null,
-    relaxation: null,
     wakeLock: null,
     alertConfig: {
       beepPreThirtyEnabled: true,
@@ -25,7 +24,7 @@
       beepApneaInterval: 30,
       beepApneaFinalEnabled: true,
       beepApneaFiveEnabled: true,
-      mantraEnabled: true,
+      mantraEnabled: false,
     },
     audioContext: null,
     audioClips: {},
@@ -80,17 +79,6 @@
     customTotalTime: document.querySelector("#custom-total-time"),
     customGeneratedTable: document.querySelector("#custom-generated-table"),
     startCustomSession: document.querySelector("#start-custom-session"),
-    startRelaxation: document.querySelector("#start-relaxation"),
-    relaxOverlay: document.querySelector("#relax-overlay"),
-    relaxBegin: document.querySelector("#relax-begin"),
-    relaxSkip: document.querySelector("#relax-skip"),
-    relaxStepTitle: document.querySelector("#relax-step-title"),
-    relaxStepCopy: document.querySelector("#relax-step-copy"),
-    relaxCount: document.querySelector("#relax-count"),
-    relaxPhase1: document.querySelector("#relax-phase-1"),
-    relaxPhase2: document.querySelector("#relax-phase-2"),
-    relaxPhase3: document.querySelector("#relax-phase-3"),
-    breathOrb: document.querySelector("#breath-orb"),
     sessionOverlay: document.querySelector("#session-overlay"),
     phaseLabel: document.querySelector("#phase-label"),
     sessionCount: document.querySelector("#session-count"),
@@ -117,6 +105,7 @@
 
   function init() {
     hydrate();
+    initAudioClips();
     bindEvents();
     renderProfile();
     refreshTables();
@@ -125,7 +114,6 @@
     drawChart();
     drawGasPreview();
     refreshCustomTable();
-    initAudioClips();
     registerServiceWorker();
   }
 
@@ -161,12 +149,6 @@
     ].forEach((element) => element.addEventListener("change", onAlertConfigChange));
     els.tabButtons.forEach((button) => button.addEventListener("click", () => activateTab(button.dataset.tabTarget)));
     els.exportHistory.addEventListener("click", exportHistoryCsv);
-    els.startRelaxation.addEventListener("click", openRelaxation);
-    els.relaxBegin.addEventListener("click", beginRelaxation);
-    els.relaxSkip.addEventListener("click", closeRelaxation);
-    els.relaxPhase1.addEventListener("click", () => playRelaxationPhase(1));
-    els.relaxPhase2.addEventListener("click", () => playRelaxationPhase(2));
-    els.relaxPhase3.addEventListener("click", () => playRelaxationPhase(3));
     els.pauseSession.addEventListener("click", togglePauseSession);
     els.skipPhase.addEventListener("click", skipPhase);
     els.endSession.addEventListener("click", () => finishSession(true));
@@ -547,92 +529,6 @@
     }
 
     state.session = null;
-  }
-
-  function openRelaxation() {
-    els.relaxOverlay.classList.remove("hidden");
-    els.relaxOverlay.setAttribute("aria-hidden", "false");
-    resetRelaxationUi();
-  }
-
-  function closeRelaxation() {
-    closeRelaxationTimersOnly();
-    state.relaxation = null;
-    els.relaxOverlay.classList.add("hidden");
-    els.relaxOverlay.setAttribute("aria-hidden", "true");
-    resetRelaxationUi();
-  }
-
-  function resetRelaxationUi() {
-    els.relaxStepTitle.textContent = "Preparación";
-    els.relaxStepCopy.textContent = "Cuando estés listo, empieza la guía.";
-    els.relaxCount.textContent = "Ciclo 0 / 0";
-    els.breathOrb.classList.remove("expand");
-    els.relaxBegin.disabled = false;
-  }
-
-  function beginRelaxation() {
-    playRelaxationPhase(1);
-  }
-
-  function scheduleRelax(delay, title, copy, callback) {
-    const id = window.setTimeout(() => {
-      els.relaxStepTitle.textContent = title;
-      els.relaxStepCopy.textContent = copy;
-      callback();
-    }, delay);
-    state.relaxation.timeouts.push(id);
-  }
-
-  function playRelaxationPhase(phaseNumber) {
-    closeRelaxationTimersOnly();
-    els.relaxBegin.disabled = true;
-    if (!state.relaxation) state.relaxation = { timeouts: [] };
-
-    if (phaseNumber === 1) {
-      let delay = 0;
-      const cycles = 6;
-      for (let cycle = 1; cycle <= cycles; cycle += 1) {
-        scheduleRelax(delay, "Respiración diafragmática", `Ciclo ${cycle} de ${cycles}. Inhala 4, exhala 7.`, () => {
-          els.relaxCount.textContent = `Ciclo ${cycle} / ${cycles}`;
-          els.breathOrb.classList.add("expand");
-        });
-        delay += 4000;
-        scheduleRelax(delay, "Respiración diafragmática", "Exhala largo, suelta el peso del cuerpo.", () => {
-          els.breathOrb.classList.remove("expand");
-        });
-        delay += 7000;
-      }
-      return;
-    }
-
-    if (phaseNumber === 2) {
-      let delay = 0;
-      const zones = [
-        "Siente los pies pesados y quietos.",
-        "Afloja abdomen y espalda baja.",
-        "Relaja el pecho, sin tensión.",
-        "Suelta hombros y cuello.",
-        "Desarma la mandíbula.",
-        "Suaviza los ojos y la frente.",
-      ];
-      zones.forEach((instruction, idx) => {
-        scheduleRelax(delay, "Escaneo corporal", instruction, () => {
-          els.relaxCount.textContent = `Zona ${idx + 1} / ${zones.length}`;
-        });
-        delay += 4200;
-      });
-      return;
-    }
-
-    scheduleRelax(0, "Última inhalación", "Toma una última inhalación al 80%. Visualiza el hundimiento y espera la señal.", () => {
-      els.relaxCount.textContent = "Fase final";
-    });
-  }
-
-  function closeRelaxationTimersOnly() {
-    if (state.relaxation?.timeouts) state.relaxation.timeouts.forEach((id) => clearTimeout(id));
-    state.relaxation = { timeouts: [] };
   }
 
   function renderHistory() {
@@ -1124,8 +1020,16 @@
     const remaining = state.session.remaining;
 
     if (phase.phase === "RECUPERACIÓN") {
+      if (state.alertConfig.beepPreThirtyEnabled && remaining === 60) {
+        triggerAudioCue("pre-thirty", "minuteBeforeApnea");
+      }
+
       if (state.alertConfig.beepPreThirtyEnabled && remaining === 30) {
-        triggerAudioCue("pre-thirty", "thirtyBeforeApnea");
+        triggerAudioCue("pre-thirty-30", "thirtyBeforeApnea");
+      }
+
+      if (state.alertConfig.beepPreThirtyEnabled && remaining === 20) {
+        triggerAudioCue("pre-thirty-20", "twentyBeforeApnea");
       }
 
       if (state.alertConfig.beepPreTenEnabled && remaining === 10) {
@@ -1133,7 +1037,7 @@
       }
 
       if (state.alertConfig.beepPreFiveEnabled && remaining === 5) {
-        triggerAudioCue(`pre-five-${phase.repIndex}`, "topTimeCountdown");
+        triggerSoftBeep(`pre-five-${phase.repIndex}`);
       }
     }
 
@@ -1155,7 +1059,7 @@
         triggerAudioCue(`apnea-five-${phase.repIndex}`, "conteoRespira");
       }
 
-      if (state.alertConfig.mantraEnabled && elapsed === Math.floor(phase.duration / 2)) {
+      if (state.alertConfig.mantraEnabled && state.audioClips.mantra && elapsed === Math.floor(phase.duration / 2)) {
         triggerAudioCue(`apnea-mid-${phase.repIndex}`, "mantra");
       }
     }
@@ -1205,16 +1109,18 @@
 
   function initAudioClips() {
     state.audioClips = {
-      tenSeconds: new Audio("./audio/10-segundos.mp3"),
-      thirtyBeforeApnea: new Audio("./audio/30-segs.mp3"),
-      conteoRespira: new Audio("./audio/conteo-respira.mp3"),
-      topTimeCountdown: new Audio("./audio/counter-toptime.mp3"),
-      mantra: new Audio("./audio/mantra.mp3"),
+      minuteBeforeApnea: new Audio("./audio/minuto.mp3"),
+      thirtyBeforeApnea: new Audio("./audio/30segundos.mp3"),
+      twentyBeforeApnea: new Audio("./audio/20segundos.mp3"),
+      tenSeconds: new Audio("./audio/10segundos.mp3"),
+      conteoRespira: new Audio("./audio/counter_respira.mp3"),
     };
 
     Object.values(state.audioClips).forEach((audio) => {
       audio.preload = "auto";
     });
+
+    state.alertConfig.mantraEnabled = false;
   }
 
   function playClip(name) {
@@ -1384,6 +1290,11 @@
 
   function saveJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+    document.dispatchEvent(
+      new CustomEvent("bluehold:local-state-changed", {
+        detail: { key, value, updatedAt: new Date().toISOString() },
+      })
+    );
   }
 
   function setStorageStatus(text) {
@@ -1421,36 +1332,27 @@
 })();
 
 
-const menu = document.querySelector('.bottom-tabs');
-
-
+const menu = document.querySelector(".bottom-tabs");
 const toggleBtn = document.querySelector(".menu-toggle");
+const overlay = document.querySelector(".menu-overlay");
 
+if (menu && toggleBtn && overlay) {
+  const closeMenu = () => {
+    menu.classList.remove("open");
+    overlay.classList.remove("active");
+  };
 
-const overlay = document.createElement('div');
-overlay.className = 'menu-overlay';
-
-document.body.appendChild(overlay);
-
-toggleBtn.addEventListener('click', () => {
-  menu.classList.toggle('open');
-  overlay.classList.toggle('active');
-});
-
-
-overlay.addEventListener('click', () => {
-  menu.classList.remove('open');
-  overlay.classList.remove('active');
-});
-
-const menuButtons = document.querySelectorAll('.bottom-tabs button');
-
-menuButtons.forEach(button => {
-  button.addEventListener('click', () => {
-    menu.classList.remove('open');
-    overlay.classList.remove('active');
+  toggleBtn.addEventListener("click", () => {
+    menu.classList.toggle("open");
+    overlay.classList.toggle("active");
   });
-});
+
+  overlay.addEventListener("click", closeMenu);
+
+  document.querySelectorAll(".bottom-tabs button").forEach((button) => {
+    button.addEventListener("click", closeMenu);
+  });
+}
 
 //mouthfill
 
@@ -1515,61 +1417,6 @@ menuButtons.forEach(button => {
     document.getElementById('pf-result').textContent = pb.toFixed(1);
   }
  
-  // ─── HISTORIAL ───
-  let sessions = [];
- 
-  function addSession() {
-    const date = document.getElementById('sess-date').value || new Date().toISOString().slice(0,10);
-    const cd = parseFloat(document.getElementById('sess-charge').value) || 0;
-    const rd = parseFloat(document.getElementById('sess-reach').value) || 0;
-    const notes = document.getElementById('sess-notes').value.trim();
-    const ratio = +(dBar(rd) / dBar(cd)).toFixed(2);
-    sessions.unshift({ date, cd, rd, ratio, notes });
-    renderSessions();
-    document.getElementById('sess-notes').value = '';
-  }
- 
-  function deleteSession(i) {
-    sessions.splice(i, 1);
-    renderSessions();
-  }
- 
-  function renderSessions() {
-    const tbody = document.getElementById('sess-body');
-    if (!sessions.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--text-muted); padding:1.5rem 0; font-family:\'DM Mono\',monospace; font-size:11px;">sin sesiones registradas</td></tr>';
-      document.getElementById('avg-row').style.display = 'none';
-      return;
-    }
-    tbody.innerHTML = sessions.map((s, i) => `
-      <tr>
-        <td>${s.date}</td>
-        <td>${s.cd}m</td>
-        <td>${s.rd}m</td>
-        <td class="ratio-cell">${s.ratio.toFixed(2)}×</td>
-        <td style="color:var(--text-muted)">${s.notes || '—'}</td>
-        <td><button class="del-btn" onclick="deleteSession(${i})">×</button></td>
-      </tr>
-    `).join('');
-    const avg = (sessions.reduce((a, s) => a + s.ratio, 0) / sessions.length).toFixed(2);
-    document.getElementById('avg-row').style.display = 'block';
-    document.getElementById('avg-ratio').textContent = avg + '×';
-  }
- 
-  // ─── TABS ───
-  function switchTab(tab) {
-    const tabs = ['calc','predict','sessions','ref'];
-    document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', tabs[i] === tab));
-    tabs.forEach(t => document.getElementById('panel-' + (t==='predict'?'predict': t==='sessions'?'sessions': t==='ref'?'ref':'calc')).classList.remove('active'));
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    const map = { calc:'panel-calc', predict:'panel-predict', sessions:'panel-sessions', ref:'panel-ref' };
-    document.getElementById(map[tab]).classList.add('active');
-  }
- 
-  // init
-  document.getElementById('sess-date').value = new Date().toISOString().slice(0,10);
-  calcRatio();
-  calcPredict();
 /* ─── Módulo Mouthfill Ratio ─── */
 
 (function () {
@@ -1629,55 +1476,8 @@ menuButtons.forEach(button => {
     document.getElementById('pf-result').textContent       = pb.toFixed(1);
   };
 
-  let mfSessions = [];
-
-  window.addMFSession = function () {
-    const date   = document.getElementById('sess-date').value || new Date().toISOString().slice(0, 10);
-    const cd     = parseFloat(document.getElementById('sess-charge').value) || 0;
-    const rd     = parseFloat(document.getElementById('sess-reach').value)  || 0;
-    const notes  = document.getElementById('sess-notes').value.trim();
-    const ratio  = +(dBar(rd) / dBar(cd)).toFixed(2);
-    mfSessions.unshift({ date, cd, rd, ratio, notes });
-    renderMFSessions();
-    document.getElementById('sess-notes').value = '';
-  };
-
-  window.deleteMFSession = function (i) {
-    mfSessions.splice(i, 1);
-    renderMFSessions();
-  };
-
-  function renderMFSessions() {
-    const tbody  = document.getElementById('sess-body');
-    const avgRow = document.getElementById('avg-row');
-    if (!tbody) return;
-
-    if (!mfSessions.length) {
-      tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:1.5rem 0; color:var(--muted); font-size:0.82rem;">Sin sesiones registradas</td></tr>';
-      if (avgRow) avgRow.style.display = 'none';
-      return;
-    }
-
-    tbody.innerHTML = mfSessions.map((s, i) => `
-      <tr>
-        <td>${s.date}</td>
-        <td>${s.cd} m</td>
-        <td>${s.rd} m</td>
-        <td class="mf-ratio-cell">${s.ratio.toFixed(2)}×</td>
-        <td style="color:var(--muted)">${s.notes || '—'}</td>
-        <td><button class="mf-del-btn" onclick="deleteMFSession(${i})">×</button></td>
-      </tr>
-    `).join('');
-
-    if (avgRow) {
-      const avg = (mfSessions.reduce((a, s) => a + s.ratio, 0) / mfSessions.length).toFixed(2);
-      avgRow.style.display = 'block';
-      document.getElementById('avg-ratio').textContent = avg + '×';
-    }
-  }
-
   window.mfSwitchTab = function (tab) {
-    const map = { calc: 'mf-panel-calc', predict: 'mf-panel-predict', sessions: 'mf-panel-sessions', ref: 'mf-panel-ref' };
+    const map = { calc: 'mf-panel-calc', predict: 'mf-panel-predict', ref: 'mf-panel-ref' };
     document.querySelectorAll('.mf-tab').forEach((btn, i) => {
       const keys = Object.keys(map);
       btn.classList.toggle('active', keys[i] === tab);
@@ -1692,9 +1492,345 @@ menuButtons.forEach(button => {
 
   // Init on load
   document.addEventListener('DOMContentLoaded', function () {
-    const sd = document.getElementById('sess-date');
-    if (sd) sd.value = new Date().toISOString().slice(0, 10);
     if (document.getElementById('charge-depth')) calcRatio();
     if (document.getElementById('pred-ratio'))   calcPredict();
+  });
+})();
+
+/* ─── Módulo Respiración Cuadrada ─── */
+(function () {
+
+  // ── Estado ──
+  let sqRunning     = false;
+  let sqPhaseIndex  = 0;
+  let sqSecondsLeft = 0;
+  let sqCycleDone   = 0;
+  let sqTotalCycles = 5;
+  let sqPhases      = [];
+  let sqProgress    = 0;
+  let rafId         = null;
+  let lastTs        = null;
+
+  const PHASE_COLORS  = ['#2fd8c0', '#1a7fff', '#7ea8b8', '#456bff'];
+  const SIDE_LABEL_IDS = ['sq-lbl-inhale', 'sq-lbl-hold1', 'sq-lbl-exhale', 'sq-lbl-hold2'];
+  const FLOW_NOTES = {
+    calm: 'Regular y estabilizar',
+    focus: 'Activación y foco',
+    down: 'Bajar pulsaciones',
+  };
+
+  // ── Canvas ──
+  const SIZE  = 280;
+  const PAD   = 52;   // más espacio para los labels laterales
+  const TRACK = SIZE - PAD * 2;
+  const PERIM = TRACK * 4;
+  const R     = 10;   // radio de esquinas
+
+  // ── Steppers ──
+  const STEPPER_CFG = {
+    'sq-inhale': { min: 1, max: 30 },
+    'sq-hold1':  { min: 0, max: 30 },
+    'sq-exhale': { min: 1, max: 30 },
+    'sq-hold2':  { min: 0, max: 30 },
+    'sq-cycles': { min: 1, max: 60 },
+  };
+
+  function initSteppers() {
+    ['sq-inhale', 'sq-hold1', 'sq-exhale', 'sq-hold2', 'sq-cycles'].forEach((id) => {
+      document.getElementById(id)?.addEventListener('input', updateSquareSummary);
+    });
+
+    document.querySelectorAll('.sq-preset').forEach((button) => {
+      button.addEventListener('click', () => {
+        const raw = button.dataset.preset || '';
+        const [inhale, hold1, exhale, hold2, cycles] = raw.split('-').map((value) => parseInt(value, 10) || 0);
+        const map = {
+          'sq-inhale': inhale,
+          'sq-hold1': hold1,
+          'sq-exhale': exhale,
+          'sq-hold2': hold2,
+          'sq-cycles': cycles,
+        };
+
+        Object.entries(map).forEach(([id, value]) => {
+          const input = document.getElementById(id);
+          if (input) input.value = String(value);
+        });
+
+        document.querySelectorAll('.sq-preset').forEach((item) => item.classList.toggle('active', item === button));
+        updateSquareSummary();
+      });
+    });
+
+    document.querySelectorAll('.sq-btn-step').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const targetId = btn.dataset.target;
+        const delta    = parseInt(btn.dataset.delta);
+        const cfg      = STEPPER_CFG[targetId];
+        const hidden   = document.getElementById(targetId);
+        if (!hidden || !cfg) return;
+        let val = parseInt(hidden.value) + delta;
+        val = Math.min(cfg.max, Math.max(cfg.min, val));
+        hidden.value = val;
+        const unit = targetId === 'sq-cycles' ? '×' : 's';
+        const display = document.getElementById(targetId + '-val');
+        if (display) display.innerHTML = val + '<small>' + unit + '</small>';
+        updateSquareSummary();
+      });
+    });
+  }
+
+  function getSquareValues() {
+    const inhale = parseInt(document.getElementById('sq-inhale')?.value, 10) || 4;
+    const hold1 = parseInt(document.getElementById('sq-hold1')?.value, 10) || 0;
+    const exhale = parseInt(document.getElementById('sq-exhale')?.value, 10) || 4;
+    const hold2 = parseInt(document.getElementById('sq-hold2')?.value, 10) || 0;
+    const cycles = Math.max(1, parseInt(document.getElementById('sq-cycles')?.value, 10) || 5);
+    return { inhale, hold1, exhale, hold2, cycles };
+  }
+
+  function formatSquareTime(totalSeconds) {
+    const safe = Math.max(0, Math.round(totalSeconds));
+    const minutes = Math.floor(safe / 60);
+    const seconds = safe % 60;
+    return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  }
+
+  function updateSquareSummary() {
+    const { inhale, hold1, exhale, hold2, cycles } = getSquareValues();
+    const cycleSeconds = inhale + hold1 + exhale + hold2;
+    const totalSeconds = cycleSeconds * cycles;
+    const flowLabel = exhale > inhale ? FLOW_NOTES.down : inhale === exhale && hold1 === hold2 ? FLOW_NOTES.calm : FLOW_NOTES.focus;
+
+    document.getElementById('sq-total-cycle').textContent = formatSquareTime(cycleSeconds);
+    document.getElementById('sq-total-session').textContent = formatSquareTime(totalSeconds);
+    document.getElementById('sq-flow-note').textContent = flowLabel;
+  }
+
+  function setSteppersDisabled(disabled) {
+    document.querySelectorAll('.sq-btn-step').forEach(btn => {
+      btn.disabled = disabled;
+    });
+    document.querySelectorAll('.sq-stepper').forEach(el => {
+      el.classList.toggle('sq-stepper-disabled', disabled);
+    });
+  }
+
+  // ── Geometría ──
+  function perimToXY(dist) {
+    const d  = ((dist % PERIM) + PERIM) % PERIM;
+    const x0 = PAD, y0 = PAD;
+    if (d < TRACK)           return { x: x0 + d,                     y: y0 };
+    if (d < TRACK * 2)       return { x: x0 + TRACK,                 y: y0 + (d - TRACK) };
+    if (d < TRACK * 3)       return { x: x0 + TRACK - (d - TRACK*2), y: y0 + TRACK };
+    return                          { x: x0,                          y: y0 + TRACK - (d - TRACK*3) };
+  }
+
+  function rrect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x+w, y, x+w, y+r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x+w, y+h, x+w-r, y+h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y+h, x, y+h-r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x+r, y);
+    ctx.closePath();
+  }
+
+  // ── Render ──
+  function render() {
+    const canvas = document.getElementById('sq-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+
+    // Init canvas size una vez
+    if (!canvas._sqInit) {
+      canvas.width  = SIZE * dpr;
+      canvas.height = SIZE * dpr;
+      canvas.style.width  = SIZE + 'px';
+      canvas.style.height = SIZE + 'px';
+      ctx.scale(dpr, dpr);
+      canvas._sqInit = true;
+    }
+
+    ctx.clearRect(0, 0, SIZE, SIZE);
+
+    // Track base
+    rrect(ctx, PAD, PAD, TRACK, TRACK, R);
+    ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+    ctx.lineWidth   = 3;
+    ctx.stroke();
+
+    if (!sqRunning && sqCycleDone === 0) return;
+
+    // Calcular distancia total recorrida
+    let totalDist = 0;
+    for (let i = 0; i < sqPhases.length; i++) {
+      if (i < sqPhaseIndex)      totalDist += TRACK;
+      else if (i === sqPhaseIndex) { totalDist += TRACK * sqProgress; break; }
+    }
+
+    // Trail coloreado por fase
+    let drawn = 0;
+    for (let i = 0; i < sqPhases.length && drawn < totalDist; i++) {
+      const segEnd = Math.min(drawn + TRACK, totalDist);
+      const steps  = Math.max(2, Math.ceil(segEnd - drawn));
+      ctx.beginPath();
+      for (let s = 0; s <= steps; s++) {
+        const p = perimToXY(drawn + (segEnd - drawn) * (s / steps));
+        s === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y);
+      }
+      ctx.strokeStyle = sqPhases[i] ? sqPhases[i].color : '#fff';
+      ctx.lineWidth   = 3;
+      ctx.lineCap     = 'round';
+      ctx.lineJoin    = 'round';
+      ctx.stroke();
+      drawn = segEnd;
+    }
+
+    // Dot + halo
+    const dot      = perimToXY(totalDist);
+    const dotColor = sqPhases[sqPhaseIndex] ? sqPhases[sqPhaseIndex].color : '#fff';
+
+    const halo = ctx.createRadialGradient(dot.x, dot.y, 0, dot.x, dot.y, 20);
+    halo.addColorStop(0, dotColor + '44');
+    halo.addColorStop(1, 'transparent');
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 20, 0, Math.PI * 2);
+    ctx.fillStyle = halo;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = dotColor;
+    ctx.shadowColor = dotColor;
+    ctx.shadowBlur  = 10;
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.beginPath();
+    ctx.arc(dot.x, dot.y, 6, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+  }
+
+  // ── rAF loop ──
+  function rafLoop(ts) {
+    if (!sqRunning) return;
+    if (lastTs !== null) {
+      const dt       = (ts - lastTs) / 1000;
+      const phaseDur = sqPhases[sqPhaseIndex] ? sqPhases[sqPhaseIndex].duration : 1;
+      sqProgress    += dt / phaseDur;
+
+      if (sqProgress >= 1) {
+        sqProgress = 0;
+        sqPhaseIndex++;
+        if (sqPhaseIndex >= sqPhases.length) {
+          sqPhaseIndex = 0;
+          sqCycleDone++;
+          if (sqCycleDone >= sqTotalCycles) { stopSquare(); return; }
+        }
+        updateSideLabels();
+      }
+
+      sqSecondsLeft = Math.ceil((1 - sqProgress) * (sqPhases[sqPhaseIndex] ? sqPhases[sqPhaseIndex].duration : 1));
+      updateCenterUI();
+    }
+    lastTs = ts;
+    render();
+    rafId = requestAnimationFrame(rafLoop);
+  }
+
+  // ── UI helpers ──
+  function updateSideLabels() {
+    // El índice de fase mapea directamente con el lado del cuadrado
+    // Fase 0→top, 1→right, 2→bottom, 3→left
+    // Pero usamos el índice real de sqPhases que puede tener menos de 4 si hold=0
+    // Reconstruimos qué label original corresponde a cada fase activa
+    const phaseToLabelIndex = [];
+    let labelIdx = 0;
+    ['sq-inhale','sq-hold1','sq-exhale','sq-hold2'].forEach((id, i) => {
+      const hidden = document.getElementById(id);
+      const val    = hidden ? parseInt(hidden.value) : 0;
+      const min    = i === 0 || i === 2 ? 1 : 0;
+      if (val >= min) phaseToLabelIndex.push(i);
+    });
+
+    SIDE_LABEL_IDS.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const activePhaseOrigIdx = phaseToLabelIndex[sqPhaseIndex] ?? -1;
+      el.classList.toggle('sq-side-active', i === activePhaseOrigIdx);
+    });
+  }
+
+  function updateCenterUI() {
+    const phase = sqPhases[sqPhaseIndex];
+    document.getElementById('sq-phase-name').textContent  = phase ? phase.name : '—';
+    document.getElementById('sq-seconds').textContent     = sqSecondsLeft > 0 ? sqSecondsLeft : '—';
+    document.getElementById('sq-cycle-count').textContent = sqRunning
+      ? `Ciclo ${sqCycleDone + 1} / ${sqTotalCycles}` : '';
+  }
+
+  function getPhases() {
+    const vals = ['sq-inhale','sq-hold1','sq-exhale','sq-hold2'].map((id, i) => {
+      const v = parseInt(document.getElementById(id)?.value) || 0;
+      return { name: ['Inhala','Contén','Exhala','Contén'][i], duration: v, color: PHASE_COLORS[i] };
+    });
+    return vals.filter((p, i) => p.duration >= (i === 0 || i === 2 ? 1 : 0));
+  }
+
+  function startSquare() {
+    sqPhases      = getPhases();
+    if (!sqPhases.length) return;
+    sqTotalCycles = Math.max(1, parseInt(document.getElementById('sq-cycles')?.value) || 5);
+    sqPhaseIndex  = 0;
+    sqCycleDone   = 0;
+    sqProgress    = 0;
+    sqRunning     = true;
+    lastTs        = null;
+    sqSecondsLeft = sqPhases[0].duration;
+
+    document.getElementById('sq-start').style.display = 'none';
+    document.getElementById('sq-stop').style.display  = 'inline-flex';
+    setSteppersDisabled(true);
+
+    updateSideLabels();
+    updateCenterUI();
+    rafId = requestAnimationFrame(rafLoop);
+  }
+
+  function stopSquare() {
+    sqRunning = false;
+    cancelAnimationFrame(rafId);
+
+    document.getElementById('sq-start').style.display = 'inline-flex';
+    document.getElementById('sq-stop').style.display  = 'none';
+    document.getElementById('sq-phase-name').textContent  = 'Respiración cuadrada';
+    document.getElementById('sq-seconds').textContent     = '—';
+    document.getElementById('sq-cycle-count').textContent = '';
+
+    SIDE_LABEL_IDS.forEach(id => {
+      document.getElementById(id)?.classList.remove('sq-side-active');
+    });
+
+    setSteppersDisabled(false);
+    sqCycleDone  = 0;
+    sqPhaseIndex = 0;
+    sqProgress   = 0;
+    render();
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    initSteppers();
+    document.getElementById('sq-start')?.addEventListener('click', startSquare);
+    document.getElementById('sq-stop')?.addEventListener('click',  stopSquare);
+    updateSquareSummary();
+    render();
   });
 })();
