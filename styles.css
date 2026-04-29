@@ -747,6 +747,45 @@ textarea {
   box-shadow: 0 32px 80px rgba(0, 0, 0, 0.5);
 }
 
+.review-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 24;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(2, 8, 14, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.review-shell {
+  width: min(100%, 640px);
+  display: grid;
+  gap: 16px;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(7, 22, 36, 0.98), rgba(3, 11, 19, 0.98));
+  border: 1px solid var(--line);
+  box-shadow: 0 32px 80px rgba(0, 0, 0, 0.42);
+}
+
+.review-shell h2 {
+  margin: 0;
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  letter-spacing: -0.02em;
+}
+
+.review-form,
+.review-grid {
+  display: grid;
+  gap: 14px;
+}
+
+.review-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .relax-shell h2 {
   margin: 0;
   font-size: clamp(2rem, 7vw, 3.6rem);
@@ -890,6 +929,7 @@ textarea {
   .history-layout,
   .test-layout,
   .metrics-grid,
+  .review-grid,
   .tables-tools,
   .protocol-grid,
   .profile-form,

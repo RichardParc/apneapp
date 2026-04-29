@@ -623,6 +623,62 @@
       </div>
     </section>
 
+    <section id="session-review-overlay" class="review-overlay hidden" aria-hidden="true">
+      <div class="review-shell">
+        <p class="eyebrow">Cierre de sesión</p>
+        <h2>Notas post-sesión</h2>
+        <p class="history-meta">Guarda rápido cómo se sintió esta práctica para que el historial te sirva de verdad.</p>
+
+        <form id="session-review-form" class="review-form">
+          <div class="review-grid">
+            <label>
+              <span>Sensación general</span>
+              <select id="review-feel">
+                <option value="Muy sólido">Muy sólido</option>
+                <option value="Controlado" selected>Controlado</option>
+                <option value="Pesado">Pesado</option>
+                <option value="Muy duro">Muy duro</option>
+              </select>
+            </label>
+            <label>
+              <span>Contracciones</span>
+              <select id="review-contractions">
+                <option value="Tardías">Tardías</option>
+                <option value="Normales" selected>Normales</option>
+                <option value="Tempranas">Tempranas</option>
+              </select>
+            </label>
+            <label>
+              <span>Técnica</span>
+              <select id="review-technique">
+                <option value="Limpia" selected>Limpia</option>
+                <option value="Aceptable">Aceptable</option>
+                <option value="Inestable">Inestable</option>
+              </select>
+            </label>
+            <label>
+              <span>Energía</span>
+              <select id="review-energy">
+                <option value="Alta">Alta</option>
+                <option value="Media" selected>Media</option>
+                <option value="Baja">Baja</option>
+              </select>
+            </label>
+          </div>
+
+          <label>
+            <span>Nota libre</span>
+            <textarea id="review-note" rows="4" placeholder="Ej: mejor relax, contracciones limpias, recuperación corta pero controlada..."></textarea>
+          </label>
+
+          <div class="button-row">
+            <button id="review-save" class="button primary" type="submit">Guardar notas</button>
+            <button id="review-skip" class="button ghost" type="button">Guardar sin nota</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
 
 
     <template id="table-row-template">

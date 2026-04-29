@@ -99,6 +99,14 @@
     testLogLap: document.querySelector("#test-log-lap"),
     testStartRecovery: document.querySelector("#test-start-recovery"),
     testFinish: document.querySelector("#test-finish"),
+    sessionReviewOverlay: document.querySelector("#session-review-overlay"),
+    sessionReviewForm: document.querySelector("#session-review-form"),
+    reviewFeel: document.querySelector("#review-feel"),
+    reviewContractions: document.querySelector("#review-contractions"),
+    reviewTechnique: document.querySelector("#review-technique"),
+    reviewEnergy: document.querySelector("#review-energy"),
+    reviewNote: document.querySelector("#review-note"),
+    reviewSkip: document.querySelector("#review-skip"),
     tabButtons: Array.from(document.querySelectorAll(".tab-button")),
     tabPanels: Array.from(document.querySelectorAll(".tab-panel")),
   };
@@ -156,6 +164,8 @@
     els.testLogLap.addEventListener("click", logTestLap);
     els.testStartRecovery.addEventListener("click", markRecoveryStart);
     els.testFinish.addEventListener("click", () => finishTest(true));
+    els.sessionReviewForm?.addEventListener("submit", submitSessionReview);
+    els.reviewSkip?.addEventListener("click", skipSessionReview);
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("resize", () => {
       drawChart();
@@ -514,21 +524,85 @@
     const repsCompleted = countCompletedApneas();
     const totalApneaSeconds = getCompletedApneaSeconds();
     if (repsCompleted > 0) {
-      state.history.unshift({
+      openSessionReview({
         date: new Date().toISOString(),
         type: state.currentSessionMeta.label,
         repsCompleted,
         totalApneaSeconds,
         dynDay: 0,
         staDay: 0,
-        notes: "Sesión completada desde temporizador",
+        notes: cancelled ? "Sesión interrumpida desde temporizador" : "Sesión completada desde temporizador",
         source: "timer",
       });
-      persistHistory();
-      renderHistory();
     }
 
     state.session = null;
+  }
+
+  function openSessionReview(entry) {
+    if (!els.sessionReviewOverlay || !els.sessionReviewForm) {
+      finalizeSessionReview(entry);
+      return;
+    }
+
+    state.pendingReviewEntry = entry;
+    els.reviewFeel.value = "Controlado";
+    els.reviewContractions.value = "Normales";
+    els.reviewTechnique.value = "Limpia";
+    els.reviewEnergy.value = "Media";
+    els.reviewNote.value = "";
+    els.sessionReviewOverlay.classList.remove("hidden");
+    els.sessionReviewOverlay.setAttribute("aria-hidden", "false");
+  }
+
+  function closeSessionReview() {
+    if (!els.sessionReviewOverlay) return;
+    els.sessionReviewOverlay.classList.add("hidden");
+    els.sessionReviewOverlay.setAttribute("aria-hidden", "true");
+  }
+
+  function buildReviewSummary() {
+    const bits = [
+      `Sensación: ${els.reviewFeel.value}`,
+      `Contracciones: ${els.reviewContractions.value}`,
+      `Técnica: ${els.reviewTechnique.value}`,
+      `Energía: ${els.reviewEnergy.value}`,
+    ];
+    const note = els.reviewNote.value.trim();
+    if (note) bits.push(note);
+    return bits.join(" · ");
+  }
+
+  function finalizeSessionReview(entry, useForm = false) {
+    if (!entry) return;
+    const reviewedEntry = {
+      ...entry,
+      notes: useForm ? buildReviewSummary() : entry.notes || "Sin notas",
+      sessionReview: useForm
+        ? {
+            feel: els.reviewFeel.value,
+            contractions: els.reviewContractions.value,
+            technique: els.reviewTechnique.value,
+            energy: els.reviewEnergy.value,
+            note: els.reviewNote.value.trim(),
+          }
+        : null,
+    };
+
+    state.history.unshift(reviewedEntry);
+    persistHistory();
+    renderHistory();
+    state.pendingReviewEntry = null;
+    closeSessionReview();
+  }
+
+  function submitSessionReview(event) {
+    event.preventDefault();
+    finalizeSessionReview(state.pendingReviewEntry, true);
+  }
+
+  function skipSessionReview() {
+    finalizeSessionReview(state.pendingReviewEntry, false);
   }
 
   function renderHistory() {
@@ -942,7 +1016,7 @@
       : 0;
 
     if (!cancelled && laps) {
-      state.history.unshift({
+      openSessionReview({
         date: new Date().toISOString(),
         type: "Test 6 minutos Pelizzari",
         repsCompleted: laps,
@@ -952,8 +1026,6 @@
         notes: `Distancia ${totalDistance} m · rec media ${formatDuration(avgRecovery)}`,
         source: "pelizzari-test",
       });
-      persistHistory();
-      renderHistory();
     }
 
     state.test = null;
