@@ -12,8 +12,6 @@
     <title>Apneapp</title>
   </head>
   <body>
-  <canvas id="waveCanvas"></canvas>
-
     <div class="app-shell">
       <button class="menu-toggle" aria-label="Abrir menú">
   ☰
@@ -364,7 +362,7 @@
               <button id="export-history" class="button secondary" type="button">Exportar CSV</button>
             </div>
 
-            <div class="history-layout">
+          <div class="history-layout">
               <div class="chart-wrap">
                 <canvas id="progress-chart" height="260"></canvas>
               </div>
@@ -381,6 +379,19 @@
                 </article>
               </div>
             </div>
+
+            <section class="history-filter-block">
+              <div class="history-filter-head">
+                <p class="metric-label">Filtrar por sensación</p>
+                <span class="history-meta">Encuentra rápido sesiones fáciles, neutras o difíciles.</span>
+              </div>
+              <div class="history-filters" role="group" aria-label="Filtrar historial por sensación">
+                <button class="history-filter active" type="button" data-history-filter="all">Todas</button>
+                <button class="history-filter" type="button" data-history-filter="easy">🙂 Fáciles</button>
+                <button class="history-filter" type="button" data-history-filter="neutral">😐 Neutras</button>
+                <button class="history-filter" type="button" data-history-filter="hard">☹️ Difíciles</button>
+              </div>
+            </section>
 
             <div id="history-list" class="history-list"></div>
           </section>
@@ -630,16 +641,18 @@
         <p class="history-meta">Guarda rápido cómo se sintió esta práctica para que el historial te sirva de verdad.</p>
 
         <form id="session-review-form" class="review-form">
+          <div class="review-intro">
+            <p class="metric-label">Sensación de la sesión</p>
+            <strong>¿Cómo se sintió esta práctica?</strong>
+          </div>
+          <input id="review-mood" type="hidden" value="neutral" />
+          <div class="review-mood">
+            <button class="review-mood-button" type="button" data-review-mood="easy">🙂 Fácil</button>
+            <button class="review-mood-button active" type="button" data-review-mood="neutral">😐 Normal</button>
+            <button class="review-mood-button" type="button" data-review-mood="hard">☹️ Difícil</button>
+          </div>
+
           <div class="review-grid">
-            <label>
-              <span>Sensación general</span>
-              <select id="review-feel">
-                <option value="Muy sólido">Muy sólido</option>
-                <option value="Controlado" selected>Controlado</option>
-                <option value="Pesado">Pesado</option>
-                <option value="Muy duro">Muy duro</option>
-              </select>
-            </label>
             <label>
               <span>Contracciones</span>
               <select id="review-contractions">
@@ -693,7 +706,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="supabase-config.js"></script>
-    <script src="breathing-animations.js"></script>
     <script src="app.js" defer></script>
     <script src="auth-sync.js" defer></script>
 

@@ -44,10 +44,6 @@ body.training-active {
   overflow: hidden;
 }
 
-body.training-active #waveCanvas {
-  opacity: 0.18;
-}
-
 button, input, select, textarea {
   font: inherit;
 }
@@ -55,21 +51,6 @@ button, input, select, textarea {
 button {
   cursor: pointer;
 }
-
-/* fondo interactivo */
-#waveCanvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0; 
-  opacity: 0.2;
-  mix-blend-mode: screen;
-  filter: saturate(1.2);
-}
-
 
 input[type="checkbox"] {
   width: 18px;
@@ -532,6 +513,93 @@ textarea {
   gap: 10px;
 }
 
+.history-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.history-filter-block,
+.history-filter-head {
+  display: grid;
+  gap: 8px;
+}
+
+.history-filter,
+.review-mood-button {
+  min-height: 40px;
+  padding: 0 15px;
+  border-radius: 999px;
+  border: 1px solid rgba(100, 180, 210, 0.12);
+  background: rgba(255, 255, 255, 0.025);
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+  transition: background var(--transition), color var(--transition), border-color var(--transition), transform var(--transition);
+}
+
+.review-mood-button {
+  min-height: 54px;
+  padding: 0 20px;
+  font-size: 1rem;
+}
+
+.history-filter.active,
+.history-filter:hover,
+.review-mood-button.active,
+.review-mood-button:hover {
+  background: rgba(255, 118, 164, 0.1);
+  border-color: rgba(255, 118, 164, 0.22);
+  color: #ff8bb7;
+  transform: translateY(-1px);
+}
+
+.history-card {
+  position: relative;
+}
+
+.history-mood {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 118, 164, 0.07);
+  border: 1px solid rgba(255, 118, 164, 0.13);
+  font-size: 1rem;
+  color: #ff90b8;
+  white-space: nowrap;
+}
+
+.history-mood small {
+  font-size: 0.73rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.history-card-main {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.history-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.history-note {
+  color: var(--text);
+  line-height: 1.45;
+}
+
 .rep-row,
 .history-card {
   display: flex;
@@ -589,6 +657,11 @@ textarea {
 .chart-wrap {
   flex: 1.25;
   min-height: 280px;
+  padding: 14px;
+  border-radius: 22px;
+  background: linear-gradient(180deg, rgba(5, 9, 14, 0.98), rgba(5, 9, 14, 0.94));
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
 }
 
 .history-side {
@@ -782,8 +855,24 @@ textarea {
   gap: 14px;
 }
 
+.review-mood {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.review-intro {
+  display: grid;
+  gap: 6px;
+}
+
+.review-intro strong {
+  font-size: 1.1rem;
+  letter-spacing: -0.01em;
+}
+
 .review-grid {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .relax-shell h2 {
@@ -952,6 +1041,21 @@ textarea {
     align-items: stretch;
   }
 
+  .history-filters,
+  .review-mood {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .history-card-top {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .history-mood {
+    align-self: flex-start;
+  }
+
   .auth-head,
   .auth-actions {
     display: grid;
@@ -980,6 +1084,16 @@ textarea {
   .rep-row,
   .history-card {
     flex-direction: column;
+  }
+
+  .history-mood {
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 0.95rem;
+  }
+
+  .history-mood small {
+    font-size: 0.68rem;
   }
 
   .rep-values {

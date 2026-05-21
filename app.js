@@ -30,6 +30,7 @@
     audioClips: {},
     customTable: [],
     customSessionMeta: null,
+    historyFilter: "all",
   };
 
   const els = {
@@ -101,12 +102,14 @@
     testFinish: document.querySelector("#test-finish"),
     sessionReviewOverlay: document.querySelector("#session-review-overlay"),
     sessionReviewForm: document.querySelector("#session-review-form"),
-    reviewFeel: document.querySelector("#review-feel"),
+    reviewMood: document.querySelector("#review-mood"),
     reviewContractions: document.querySelector("#review-contractions"),
     reviewTechnique: document.querySelector("#review-technique"),
     reviewEnergy: document.querySelector("#review-energy"),
     reviewNote: document.querySelector("#review-note"),
     reviewSkip: document.querySelector("#review-skip"),
+    historyFilters: Array.from(document.querySelectorAll(".history-filter")),
+    reviewMoodButtons: Array.from(document.querySelectorAll(".review-mood-button")),
     tabButtons: Array.from(document.querySelectorAll(".tab-button")),
     tabPanels: Array.from(document.querySelectorAll(".tab-panel")),
   };
@@ -166,6 +169,18 @@
     els.testFinish.addEventListener("click", () => finishTest(true));
     els.sessionReviewForm?.addEventListener("submit", submitSessionReview);
     els.reviewSkip?.addEventListener("click", skipSessionReview);
+    els.historyFilters.forEach((button) =>
+      button.addEventListener("click", () => {
+        state.historyFilter = button.dataset.historyFilter || "all";
+        syncHistoryFilterUi();
+        renderHistory();
+      })
+    );
+    els.reviewMoodButtons.forEach((button) =>
+      button.addEventListener("click", () => {
+        setReviewMood(button.dataset.reviewMood || "neutral");
+      })
+    );
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("resize", () => {
       drawChart();
@@ -523,7 +538,7 @@
 
     const repsCompleted = countCompletedApneas();
     const totalApneaSeconds = getCompletedApneaSeconds();
-    if (repsCompleted > 0) {
+    if (repsCompleted > 0 || !cancelled) {
       openSessionReview({
         date: new Date().toISOString(),
         type: state.currentSessionMeta.label,
@@ -546,7 +561,7 @@
     }
 
     state.pendingReviewEntry = entry;
-    els.reviewFeel.value = "Controlado";
+    setReviewMood("neutral");
     els.reviewContractions.value = "Normales";
     els.reviewTechnique.value = "Limpia";
     els.reviewEnergy.value = "Media";
@@ -563,7 +578,7 @@
 
   function buildReviewSummary() {
     const bits = [
-      `Sensación: ${els.reviewFeel.value}`,
+      `Carga: ${getMoodMeta(els.reviewMood.value).label}`,
       `Contracciones: ${els.reviewContractions.value}`,
       `Técnica: ${els.reviewTechnique.value}`,
       `Energía: ${els.reviewEnergy.value}`,
@@ -578,9 +593,10 @@
     const reviewedEntry = {
       ...entry,
       notes: useForm ? buildReviewSummary() : entry.notes || "Sin notas",
+      mood: useForm ? els.reviewMood.value : entry.mood || "neutral",
       sessionReview: useForm
         ? {
-            feel: els.reviewFeel.value,
+            mood: els.reviewMood.value,
             contractions: els.reviewContractions.value,
             technique: els.reviewTechnique.value,
             energy: els.reviewEnergy.value,
@@ -605,7 +621,36 @@
     finalizeSessionReview(state.pendingReviewEntry, false);
   }
 
+  function setReviewMood(mood) {
+    if (els.reviewMood) els.reviewMood.value = mood;
+    els.reviewMoodButtons.forEach((button) => {
+      button.classList.toggle("active", button.dataset.reviewMood === mood);
+    });
+  }
+
+  function getMoodMeta(mood) {
+    return {
+      easy: { icon: "🙂", label: "Fácil" },
+      neutral: { icon: "😐", label: "Normal" },
+      hard: { icon: "☹️", label: "Difícil" },
+    }[mood] || { icon: "😐", label: "Normal" };
+  }
+
+  function syncHistoryFilterUi() {
+    els.historyFilters.forEach((button) => {
+      button.classList.toggle("active", button.dataset.historyFilter === state.historyFilter);
+    });
+  }
+
+  function getFilteredHistory() {
+    if (state.historyFilter === "all") return state.history;
+    return state.history.filter((entry) => (entry.mood || "neutral") === state.historyFilter);
+  }
+
   function renderHistory() {
+    syncHistoryFilterUi();
+    const filteredHistory = getFilteredHistory();
+
     if (!state.history.length) {
       els.historyList.innerHTML = "<article class='history-card empty-card'><strong>Aún no hay sesiones guardadas</strong><span class='history-meta'>Cuando completes una tabla o un test, el historial se actualizará automáticamente aquí.</span></article>";
       els.performanceSummary.textContent = "Sin datos aún";
@@ -616,23 +661,31 @@
       return;
     }
 
-    els.historyList.innerHTML = state.history.slice(0, 8).map((entry) => {
+    if (!filteredHistory.length) {
+      els.historyList.innerHTML = "<article class='history-card empty-card'><strong>No hay sesiones con ese filtro</strong><span class='history-meta'>Prueba otra carita o vuelve a mostrar todas.</span></article>";
+      updatePerformanceSummary(filteredHistory);
+      drawChart(filteredHistory);
+      return;
+    }
+
+    els.historyList.innerHTML = filteredHistory.slice(0, 8).map((entry) => {
       const date = new Date(entry.date).toLocaleDateString("es-CO", { year: "numeric", month: "short", day: "numeric" });
       const metricBits = [
         `${entry.repsCompleted} reps`,
         `Apnea total ${entry.totalApneaSeconds ? formatDuration(entry.totalApneaSeconds) : "-"}`,
       ];
       if (entry.staDay) metricBits.push(`STA ${formatDuration(entry.staDay)}`);
-      return `<article class="history-card"><strong>${entry.type}</strong><span class="history-meta">${date} · ${metricBits.join(" · ")}</span><span>${entry.notes || "Sin notas"}</span></article>`;
+      const mood = getMoodMeta(entry.mood || "neutral");
+      return `<article class="history-card"><div class="history-card-main"><div class="history-card-top"><strong>${entry.type}</strong><span class="history-mood" title="${mood.label}">${mood.icon}<small>${mood.label}</small></span></div><span class="history-meta">${date} · ${metricBits.join(" · ")}</span><span class="history-note">${entry.notes || "Sin notas"}</span></div></article>`;
     }).join("");
 
-    updatePerformanceSummary();
-    drawChart();
+    updatePerformanceSummary(filteredHistory);
+    drawChart(filteredHistory);
   }
 
-  function updatePerformanceSummary() {
-    const latest = state.history[0];
-    const comparable = state.history.filter((entry) => entry.totalApneaSeconds > 0).slice(1, 5);
+  function updatePerformanceSummary(historyEntries = state.history) {
+    const latest = historyEntries[0];
+    const comparable = historyEntries.filter((entry) => entry.totalApneaSeconds > 0).slice(1, 5);
     if (!latest || !latest.totalApneaSeconds || !comparable.length) {
       els.performanceSummary.textContent = "Aún sin base suficiente";
       els.performanceCopy.textContent = "Necesitamos al menos una sesión previa con apnea total registrada para calcular el promedio.";
@@ -654,7 +707,7 @@
     }
   }
 
-  function drawChart() {
+  function drawChart(historyEntries = getFilteredHistory()) {
     const canvas = els.progressChart;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -669,76 +722,156 @@
     canvas.height = height * dpr;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
-    ctx.fillStyle = "rgba(255,255,255,0.04)";
+    ctx.fillStyle = "rgba(3, 6, 10, 0.98)";
     ctx.fillRect(0, 0, width, height);
 
-    if (!state.history.length) {
-      ctx.fillStyle = "#9dbdca";
-      ctx.font = "16px Segoe UI";
+    if (!historyEntries.length) {
+      ctx.fillStyle = "#7f8b95";
+      ctx.font = "500 15px Segoe UI";
       ctx.fillText("Tu progresión aparecerá aquí.", 24, 40);
       return;
     }
 
-    const padding = { top: 24, right: 24, bottom: 36, left: 42 };
-    const staPoints = state.history.slice().reverse().filter((entry) => entry.staDay > 0).map((entry) => entry.staDay);
-    const totalApneaPoints = state.history.slice().reverse().filter((entry) => entry.totalApneaSeconds > 0).map((entry) => entry.totalApneaSeconds);
-    const all = [...staPoints, ...totalApneaPoints];
-    if (!all.length) return;
+    const points = historyEntries
+      .slice()
+      .reverse()
+      .filter((entry) => entry.totalApneaSeconds > 0)
+      .map((entry) => ({
+        value: entry.totalApneaSeconds,
+        date: new Date(entry.date),
+      }));
 
+    if (!points.length) {
+      ctx.fillStyle = "#7f8b95";
+      ctx.font = "500 15px Segoe UI";
+      ctx.fillText("No hay apnea total registrada para este filtro.", 24, 40);
+      return;
+    }
+
+    const padding = { top: 16, right: 56, bottom: 34, left: 16 };
     const plotWidth = width - padding.left - padding.right;
     const plotHeight = height - padding.top - padding.bottom;
-    const maxY = Math.max(...all) * 1.15;
+    const values = points.map((point) => point.value);
+    const rawMax = Math.max(...values);
+    const rawMin = Math.min(...values);
+    const extraTop = Math.max(20, rawMax * 0.12);
+    const extraBottom = Math.max(16, (rawMax - rawMin) * 0.2);
+    const maxY = rawMax + extraTop;
+    const minY = Math.max(0, rawMin - extraBottom);
+    const rangeY = Math.max(1, maxY - minY);
 
-    ctx.strokeStyle = "rgba(157,189,202,0.25)";
-    ctx.lineWidth = 1;
-    for (let i = 0; i <= 4; i += 1) {
-      const y = padding.top + (plotHeight / 4) * i;
+    const monthMarkers = [];
+    points.forEach((point, index) => {
+      const label = point.date.toLocaleDateString("es-CO", { month: "short" });
+      const prev = monthMarkers[monthMarkers.length - 1];
+      if (!prev || prev.label !== label) monthMarkers.push({ label, index });
+    });
+
+    for (let i = 0; i < 3; i += 1) {
+      const y = padding.top + (plotHeight / 2) * i;
+      ctx.strokeStyle = i === 1 ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([]);
       ctx.beginPath();
       ctx.moveTo(padding.left, y);
       ctx.lineTo(width - padding.right, y);
       ctx.stroke();
-      ctx.fillStyle = "#9dbdca";
-      ctx.font = "12px Segoe UI";
-      ctx.fillText(String(Math.round(maxY - (maxY / 4) * i)), 8, y + 4);
     }
 
-    drawSeries(ctx, staPoints, plotWidth, plotHeight, padding, maxY, "#2d84ff", "STA");
-    drawSeries(ctx, totalApneaPoints, plotWidth, plotHeight, padding, maxY, "#ffb36b", "APNEA");
-    ctx.fillStyle = "#2d84ff";
-    ctx.fillRect(width - 120, 18, 12, 12);
-    ctx.fillStyle = "#effafd";
-    ctx.fillText("STA", width - 100, 28);
-    ctx.fillStyle = "#ffb36b";
-    ctx.fillRect(width - 66, 18, 12, 12);
-    ctx.fillStyle = "#effafd";
-    ctx.fillText("AP", width - 46, 28);
-  }
+    ctx.strokeStyle = "rgba(255,255,255,0.07)";
+    ctx.lineWidth = 1;
+    for (let i = 0; i < monthMarkers.length; i += 1) {
+      const x = padding.left + (plotWidth / Math.max(points.length - 1, 1)) * monthMarkers[i].index;
+      ctx.setLineDash([2, 4]);
+      ctx.beginPath();
+      ctx.moveTo(x, padding.top);
+      ctx.lineTo(x, height - padding.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = "rgba(125,138,148,0.86)";
+      ctx.font = "500 12px Segoe UI";
+      ctx.fillText(monthMarkers[i].label, x - 10, height - 10);
+    }
 
-  function drawSeries(ctx, values, plotWidth, plotHeight, padding, maxY, color, label) {
-    if (!values.length) return;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 3;
+    const xOf = (index) => padding.left + (plotWidth / Math.max(points.length - 1, 1)) * index;
+    const yOf = (value) => padding.top + plotHeight - ((value - minY) / rangeY) * plotHeight;
+
+    const linePoints = points.map((point, index) => ({
+      x: xOf(index),
+      y: yOf(point.value),
+    }));
+
     ctx.beginPath();
-    values.forEach((value, index) => {
-      const x = padding.left + (plotWidth / Math.max(values.length - 1, 1)) * index;
-      const y = padding.top + plotHeight - (value / maxY) * plotHeight;
-      if (index === 0) ctx.moveTo(x, y);
-      else ctx.lineTo(x, y);
+    ctx.moveTo(linePoints[0].x, height - padding.bottom);
+    linePoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.lineTo(point.x, point.y);
+        return;
+      }
+      const prev = linePoints[index - 1];
+      const controlX = (prev.x + point.x) / 2;
+      ctx.quadraticCurveTo(controlX, prev.y, point.x, point.y);
+    });
+    ctx.lineTo(linePoints[linePoints.length - 1].x, height - padding.bottom);
+    ctx.closePath();
+    const fillGradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
+    fillGradient.addColorStop(0, "rgba(216, 107, 139, 0.18)");
+    fillGradient.addColorStop(1, "rgba(216, 107, 139, 0)");
+    ctx.fillStyle = fillGradient;
+    ctx.fill();
+
+    ctx.strokeStyle = "rgba(216, 107, 139, 0.2)";
+    ctx.lineWidth = 6;
+    ctx.lineJoin = "round";
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    linePoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+        return;
+      }
+      const prev = linePoints[index - 1];
+      const controlX = (prev.x + point.x) / 2;
+      ctx.quadraticCurveTo(controlX, prev.y, point.x, point.y);
     });
     ctx.stroke();
 
-    values.forEach((value, index) => {
-      const x = padding.left + (plotWidth / Math.max(values.length - 1, 1)) * index;
-      const y = padding.top + plotHeight - (value / maxY) * plotHeight;
-      ctx.fillStyle = color;
-      ctx.beginPath();
-      ctx.arc(x, y, 4.5, 0, Math.PI * 2);
-      ctx.fill();
-      if (index === values.length - 1) {
-        ctx.fillStyle = "#effafd";
-        ctx.fillText(`${label} ${Math.round(value)}`, x - 16, y - 10);
+    ctx.strokeStyle = "#d86b8b";
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    linePoints.forEach((point, index) => {
+      if (index === 0) {
+        ctx.moveTo(point.x, point.y);
+        return;
       }
+      const prev = linePoints[index - 1];
+      const controlX = (prev.x + point.x) / 2;
+      ctx.quadraticCurveTo(controlX, prev.y, point.x, point.y);
     });
+    ctx.stroke();
+
+    points.forEach((point, index) => {
+      const { x, y } = linePoints[index];
+      ctx.beginPath();
+      ctx.arc(x, y, 4.2, 0, Math.PI * 2);
+      ctx.fillStyle = "#06080b";
+      ctx.fill();
+      ctx.lineWidth = 2.6;
+      ctx.strokeStyle = "#d86b8b";
+      ctx.stroke();
+    });
+
+    const yTicks = [maxY, minY + rangeY * 0.5, minY];
+    ctx.fillStyle = "#7f8b95";
+    ctx.font = "500 12px Segoe UI";
+    yTicks.forEach((tick, index) => {
+      const y = padding.top + (plotHeight / 2) * index + 4;
+      ctx.fillText(formatChartMinutes(tick), width - padding.right + 8, y);
+    });
+  }
+
+  function formatChartMinutes(seconds) {
+    return `${(seconds / 60).toFixed(1)}m`;
   }
 
   function drawGasPreview(rows = state.currentTable) {
