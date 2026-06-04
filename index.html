@@ -171,7 +171,27 @@
                   </div>
                   <span id="preview-subtitle" class="history-meta">Curva general de acumulación de CO₂ durante toda la sesión.</span>
                 </div>
-                <canvas id="gas-preview-chart" height="220"></canvas>
+                <div class="preview-stats">
+                  <div class="preview-stat">
+                    <span>Reps</span>
+                    <strong id="preview-reps">0</strong>
+                  </div>
+                  <div class="preview-stat">
+                    <span>Sesión</span>
+                    <strong id="preview-total">00:00</strong>
+                  </div>
+                  <div class="preview-stat">
+                    <span>Carga final</span>
+                    <strong id="preview-load">Base</strong>
+                  </div>
+                </div>
+                <div class="preview-legend" aria-hidden="true">
+                  <span><i class="legend-line"></i> Acumulación estimada</span>
+                  <span><i class="legend-zone"></i> Zona alta</span>
+                </div>
+                <div class="preview-chart-shell">
+                  <canvas id="gas-preview-chart" height="250"></canvas>
+                </div>
               </article>
             </div>
 

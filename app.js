@@ -68,6 +68,9 @@
     gasPreviewChart: document.querySelector("#gas-preview-chart"),
     previewTitle: document.querySelector("#preview-title"),
     previewSubtitle: document.querySelector("#preview-subtitle"),
+    previewReps: document.querySelector("#preview-reps"),
+    previewTotal: document.querySelector("#preview-total"),
+    previewLoad: document.querySelector("#preview-load"),
     toggleAlerts: document.querySelector("#toggle-alerts"),
     alertsBody: document.querySelector("#alerts-body"),
     customType: document.querySelector("#custom-type"),
@@ -815,12 +818,12 @@
     ctx.lineTo(linePoints[linePoints.length - 1].x, height - padding.bottom);
     ctx.closePath();
     const fillGradient = ctx.createLinearGradient(0, padding.top, 0, height - padding.bottom);
-    fillGradient.addColorStop(0, "rgba(216, 107, 139, 0.18)");
-    fillGradient.addColorStop(1, "rgba(216, 107, 139, 0)");
+    fillGradient.addColorStop(0, "rgba(47, 216, 192, 0.18)");
+    fillGradient.addColorStop(1, "rgba(47, 216, 192, 0)");
     ctx.fillStyle = fillGradient;
     ctx.fill();
 
-    ctx.strokeStyle = "rgba(216, 107, 139, 0.2)";
+    ctx.strokeStyle = "rgba(47, 216, 192, 0.2)";
     ctx.lineWidth = 6;
     ctx.lineJoin = "round";
     ctx.lineCap = "round";
@@ -836,7 +839,7 @@
     });
     ctx.stroke();
 
-    ctx.strokeStyle = "#d86b8b";
+    ctx.strokeStyle = "#2fd8c0";
     ctx.lineWidth = 2.6;
     ctx.beginPath();
     linePoints.forEach((point, index) => {
@@ -857,7 +860,7 @@
       ctx.fillStyle = "#06080b";
       ctx.fill();
       ctx.lineWidth = 2.6;
-      ctx.strokeStyle = "#d86b8b";
+      ctx.strokeStyle = "#2fd8c0";
       ctx.stroke();
     });
 
@@ -889,87 +892,87 @@
   canvas.height = height * dpr;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.clearRect(0, 0, width, height);
-  ctx.fillStyle = "rgba(255,255,255,0.035)";
+  const bg = ctx.createLinearGradient(0, 0, 0, height);
+  bg.addColorStop(0, "rgba(6, 18, 28, 0.98)");
+  bg.addColorStop(1, "rgba(4, 12, 20, 0.98)");
+  ctx.fillStyle = bg;
   ctx.fillRect(0, 0, width, height);
 
   if (!rows || !rows.length) {
     els.previewTitle.textContent = "Selecciona una tabla para estimar la carga";
     els.previewSubtitle.textContent = "Curva general de acumulación de CO₂ durante toda la sesión.";
+    if (els.previewReps) els.previewReps.textContent = "0";
+    if (els.previewTotal) els.previewTotal.textContent = "00:00";
+    if (els.previewLoad) els.previewLoad.textContent = "Base";
     ctx.fillStyle = "#9dbdca";
     ctx.font = "16px Segoe UI";
     ctx.fillText("Sin datos para previsualizar.", 24, 40);
     return;
   }
 
-  const padding = { top: 22, right: 18, bottom: 30, left: 42 };
+  const padding = { top: 18, right: 18, bottom: 24, left: 18 };
   const plotWidth = width - padding.left - padding.right;
   const plotHeight = height - padding.top - padding.bottom;
 
   const simulation = buildGasSimulation(rows);
   const co2 = simulation.co2;
   const maxValue = Math.max(...co2, 1);
+  const minValue = Math.min(...co2, 0);
   const n = Math.max(co2.length - 1, 1);
 
   els.previewTitle.textContent = `Patrón completo de ${rows.length} repeticiones`;
-  els.previewSubtitle.textContent = `Carga acumulada durante ${formatDuration(simulation.totalSeconds)} de sesión.`;
+  els.previewSubtitle.textContent = `Acumulación estimada durante ${formatDuration(simulation.totalSeconds)} de sesión.`;
+  if (els.previewReps) els.previewReps.textContent = String(rows.length);
+  if (els.previewTotal) els.previewTotal.textContent = formatDuration(simulation.totalSeconds);
+  if (els.previewLoad) els.previewLoad.textContent = getPreviewLoadLabel(co2[co2.length - 1] || 0, maxValue);
 
   const xOf = (i) => padding.left + (plotWidth / n) * i;
-  const yOf = (v) => padding.top + plotHeight - (v / maxValue) * plotHeight;
+  const yOf = (v) => padding.top + plotHeight - ((v - minValue) / Math.max(maxValue - minValue, 1)) * plotHeight;
 
-  // Grid lines horizontales
-  ctx.lineWidth = 0.5;
-  for (let i = 0; i <= 4; i++) {
-    const y = padding.top + (plotHeight / 4) * i;
-    ctx.strokeStyle = "rgba(157,189,202,0.14)";
+  const zoneStart = minValue + (maxValue - minValue) * 0.78;
+  const zoneY = yOf(zoneStart);
+  const zoneGradient = ctx.createLinearGradient(0, padding.top, 0, zoneY);
+  zoneGradient.addColorStop(0, "rgba(47, 216, 192, 0.12)");
+  zoneGradient.addColorStop(1, "rgba(47, 216, 192, 0)");
+  ctx.fillStyle = zoneGradient;
+  ctx.fillRect(padding.left, padding.top, plotWidth, zoneY - padding.top);
+
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 3; i++) {
+    const y = padding.top + (plotHeight / 3) * i;
+    ctx.strokeStyle = i === 3 ? "rgba(126, 168, 184, 0.12)" : "rgba(126, 168, 184, 0.08)";
     ctx.beginPath();
     ctx.moveTo(padding.left, y);
     ctx.lineTo(width - padding.right, y);
     ctx.stroke();
   }
 
-  // Etiquetas eje Y
-  ctx.font = "11px Segoe UI";
-  ctx.textAlign = "right";
-  [0, 0.5, 1].forEach((f) => {
-    const y = padding.top + plotHeight * (1 - f);
-    ctx.fillStyle = "rgba(157,189,202,0.7)";
-    ctx.fillText((f * maxValue).toFixed(1), padding.left - 5, y + 4);
-  });
-
-  // Marcas verticales por repetición
-  if (simulation.repStarts && simulation.repStarts.length) {
-    simulation.repStarts.forEach((ri) => {
+  if (simulation.repStarts.length) {
+    simulation.repStarts.forEach((ri, index) => {
       const x = xOf(ri);
-      ctx.strokeStyle = "rgba(69,107,255,0.18)";
-      ctx.lineWidth = 0.8;
+      ctx.strokeStyle = "rgba(26, 127, 255, 0.14)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([2, 4]);
       ctx.beginPath();
       ctx.moveTo(x, padding.top);
       ctx.lineTo(x, padding.top + plotHeight);
       ctx.stroke();
+      ctx.setLineDash([]);
     });
   }
 
-  // Zona de alerta (80% del máximo)
-  const alertY = yOf(maxValue * 0.80);
-  ctx.fillStyle = "rgba(220,70,50,0.07)";
-  ctx.fillRect(padding.left, padding.top, plotWidth, alertY - padding.top);
-  ctx.strokeStyle = "rgba(200,60,40,0.4)";
-  ctx.lineWidth = 0.8;
+  ctx.strokeStyle = "rgba(47, 216, 192, 0.28)";
+  ctx.lineWidth = 1;
   ctx.setLineDash([4, 3]);
   ctx.beginPath();
-  ctx.moveTo(padding.left, alertY);
-  ctx.lineTo(width - padding.right, alertY);
+  ctx.moveTo(padding.left, zoneY);
+  ctx.lineTo(width - padding.right, zoneY);
   ctx.stroke();
   ctx.setLineDash([]);
-  ctx.fillStyle = "rgba(200,60,40,0.6)";
-  ctx.font = "10px Segoe UI";
-  ctx.textAlign = "left";
-  ctx.fillText("zona alta", padding.left + 4, alertY - 4);
 
-  // Área rellena bajo la curva
   const grad = ctx.createLinearGradient(0, padding.top, 0, padding.top + plotHeight);
-  grad.addColorStop(0, "rgba(69,107,255,0.22)");
-  grad.addColorStop(1, "rgba(69,107,255,0)");
+  grad.addColorStop(0, "rgba(47, 216, 192, 0.28)");
+  grad.addColorStop(1, "rgba(26, 127, 255, 0.02)");
   ctx.beginPath();
   co2.forEach((value, i) => {
     const x = xOf(i);
@@ -985,7 +988,6 @@
   ctx.fillStyle = grad;
   ctx.fill();
 
-  // Línea principal suavizada
   ctx.beginPath();
   co2.forEach((value, i) => {
     const x = xOf(i);
@@ -995,35 +997,54 @@
     const py = yOf(co2[i - 1]);
     ctx.bezierCurveTo(px + (x - px) * 0.5, py, x - (x - px) * 0.5, y, x, y);
   });
-  ctx.strokeStyle = "#456bff";
-  ctx.lineWidth = 2;
+  ctx.strokeStyle = "rgba(47, 216, 192, 0.2)";
+  ctx.lineWidth = 6;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
   ctx.stroke();
 
-  // Ticks de tiempo en eje X
-  const tickEvery = simulation.totalSeconds <= 120 ? 320 : simulation.totalSeconds <= 300 ? 60 : 540;
-  ctx.font = "10px Segoe UI";
+  ctx.beginPath();
+  co2.forEach((value, i) => {
+    const x = xOf(i);
+    const y = yOf(value);
+    if (i === 0) { ctx.moveTo(x, y); return; }
+    const px = xOf(i - 1);
+    const py = yOf(co2[i - 1]);
+    ctx.bezierCurveTo(px + (x - px) * 0.5, py, x - (x - px) * 0.5, y, x, y);
+  });
+  ctx.strokeStyle = "#2fd8c0";
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  simulation.highlightPoints.forEach((point, index) => {
+    const x = xOf(point.index);
+    const y = yOf(point.value);
+    ctx.beginPath();
+    ctx.arc(x, y, index === simulation.highlightPoints.length - 1 ? 4.5 : 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = "#07131d";
+    ctx.fill();
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#7ef2e3";
+    ctx.stroke();
+  });
+
+  const tickEvery = simulation.totalSeconds <= 360 ? 120 : 180;
+  const tickValues = [];
+  for (let s = 0; s <= simulation.totalSeconds; s += tickEvery) tickValues.push(s);
+  if (tickValues[tickValues.length - 1] !== simulation.totalSeconds) tickValues.push(simulation.totalSeconds);
+  ctx.font = "500 10px Segoe UI";
   ctx.textAlign = "center";
-  for (let s = 0; s <= simulation.totalSeconds; s += tickEvery) {
+  tickValues.forEach((s) => {
     const x = padding.left + plotWidth * (s / simulation.totalSeconds);
-    ctx.strokeStyle = "rgba(157,189,202,0.14)";
-    ctx.lineWidth = 0.5;
+    ctx.strokeStyle = "rgba(126, 168, 184, 0.1)";
+    ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(x, padding.top + plotHeight);
     ctx.lineTo(x, padding.top + plotHeight + 4);
     ctx.stroke();
-    ctx.fillStyle = "rgba(157,189,202,0.7)";
+    ctx.fillStyle = "rgba(126, 168, 184, 0.7)";
     ctx.fillText(formatDuration(s), x, height - 4);
-  }
-
-  // Label eje Y rotado
-  ctx.save();
-  ctx.translate(12, padding.top + plotHeight / 2);
-  ctx.rotate(-Math.PI / 2);
-  ctx.fillStyle = "#9dbdca";
-  ctx.font = "11px Segoe UI";
-  ctx.textAlign = "center";
-  ctx.fillText("CO₂", 0, 0);
-  ctx.restore();
+  });
 }
 
   function drawPreviewLine(ctx, values, plotWidth, plotHeight, padding, color) {
@@ -1041,39 +1062,55 @@
 
   function buildGasSimulation(rows) {
     const co2 = [];
-    let currentCo2 = 6;
-    let floorCo2 = 6;
+    const repStarts = [];
+    const highlightPoints = [];
+    let currentCo2 = 8;
+    let floorCo2 = 8;
     let totalSeconds = 0;
 
     rows.forEach((row, index) => {
+      repStarts.push(co2.length);
       const apneaDuration = Math.max(1, Math.round(row.apneaSeconds));
       const recoveryDuration = Math.max(0, Math.round(row.recoverySeconds));
-      const peakCo2 = Math.min(100, floorCo2 + 18 + row.percent * 14 + index * 2.6);
-      const recoveryFloor = Math.max(floorCo2 + 2.4, peakCo2 - (7 + recoveryDuration * 0.018));
+      const peakCo2 = Math.min(100, floorCo2 + 14 + row.percent * 12 + index * 2.9);
+      const recoveryFloor = Math.max(floorCo2 + 1.8, peakCo2 - Math.max(4.5, 8 - recoveryDuration * 0.012));
 
-      pushLinearSegment(co2, currentCo2, peakCo2, apneaDuration);
+      pushEasedSegment(co2, currentCo2, peakCo2, apneaDuration, "up");
       currentCo2 = peakCo2;
+      highlightPoints.push({ index: Math.max(co2.length - 1, 0), value: peakCo2 });
       totalSeconds += apneaDuration;
 
       if (recoveryDuration > 0) {
-        pushLinearSegment(co2, currentCo2, recoveryFloor, recoveryDuration);
+        pushEasedSegment(co2, currentCo2, recoveryFloor, recoveryDuration, "down");
         currentCo2 = recoveryFloor;
         totalSeconds += recoveryDuration;
       }
 
-      floorCo2 = Math.min(80, floorCo2 + 2 + row.percent * 1.2 + index * 0.3);
+      floorCo2 = Math.min(82, floorCo2 + 1.6 + row.percent * 1.05 + index * 0.32);
       currentCo2 = Math.max(currentCo2, floorCo2);
     });
 
-    return { co2, totalSeconds };
+    return { co2, totalSeconds, repStarts, highlightPoints };
   }
 
-  function pushLinearSegment(target, start, end, duration) {
+  function pushEasedSegment(target, start, end, duration, direction = "up") {
     const safeDuration = Math.max(1, duration);
     for (let second = 0; second < safeDuration; second += 1) {
       const progress = second / Math.max(safeDuration - 1, 1);
-      target.push(start + (end - start) * progress);
+      const eased =
+        direction === "up"
+          ? 1 - Math.pow(1 - progress, 1.18)
+          : Math.pow(progress, 1.32);
+      target.push(start + (end - start) * eased);
     }
+  }
+
+  function getPreviewLoadLabel(finalValue, maxValue) {
+    const ratio = maxValue ? finalValue / maxValue : 0;
+    if (ratio > 0.86) return "Muy alta";
+    if (ratio > 0.72) return "Alta";
+    if (ratio > 0.55) return "Media";
+    return "Base";
   }
 
   function exportHistoryCsv() {

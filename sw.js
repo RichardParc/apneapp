@@ -1,4 +1,4 @@
-const CACHE_NAME = "blue-hold-v4";
+const CACHE_NAME = "blue-hold-v8";
 const APP_ASSETS = [
   "./",
   "./index.html",
